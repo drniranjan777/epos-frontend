@@ -12,7 +12,7 @@ cp .env.example .env
 npm run dev            # http://localhost:5173 (proxies /api and /uploads to the backend)
 ```
 
-The backend must be running (see `../backend/README.md`).
+The backend must be running: https://github.com/drniranjan777/espos-backend
 
 ## Scripts
 
