@@ -27,6 +27,17 @@ export const queryKeys = {
     all: ['masters'],
     list: (name, params) => ['masters', name, params ?? {}],
   },
+  movements: {
+    all: ['movements'],
+    list: (params) => ['movements', 'list', params],
+    detail: (id) => ['movements', 'detail', Number(id)],
+  },
+  transfers: {
+    all: ['transfers'],
+    list: (params) => ['transfers', 'list', params],
+    detail: (id) => ['transfers', 'detail', Number(id)],
+  },
+  branches: { all: ['branches'], list: (params) => ['branches', 'list', params ?? {}] },
   users: { all: ['users'], list: (params) => ['users', 'list', params] },
   roles: { all: ['roles'], permissions: ['roles', 'permissions'] },
   settings: { company: ['settings', 'company'], states: ['settings', 'states'] },

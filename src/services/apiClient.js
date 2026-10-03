@@ -7,11 +7,17 @@ const baseURL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
  * browser sends to /auth/refresh, so a page reload restores the session safely.
  */
 let accessToken = null;
+let branchId = null;
 let onSessionExpired = () => {};
 let refreshPromise = null;
 
 export function setAccessToken(token) {
   accessToken = token;
+}
+
+/** Branch sent with every request (`X-Branch-Id`); the API scopes stock data to it. */
+export function setBranchId(id) {
+  branchId = id;
 }
 
 export function setSessionExpiredHandler(handler) {
@@ -27,6 +33,7 @@ export const api = axios.create({
 
 api.interceptors.request.use((config) => {
   if (accessToken) config.headers.Authorization = `Bearer ${accessToken}`;
+  if (branchId) config.headers['X-Branch-Id'] = String(branchId);
   return config;
 });
 

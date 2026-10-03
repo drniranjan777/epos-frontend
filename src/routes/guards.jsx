@@ -5,6 +5,7 @@ import { ListSkeleton } from '../components/common/States';
 import { NAV_SECTIONS } from '../constants/navigation';
 import { useAuth } from '../hooks/useAuth';
 import { ForbiddenPage } from '../pages/errors/ForbiddenPage';
+import { NoBranchPage } from '../pages/errors/NoBranchPage';
 
 /** Requires a signed-in user; otherwise redirects to /login and remembers where to return. */
 export function ProtectedRoute() {
@@ -50,4 +51,10 @@ export function LazyOutlet() {
       <Outlet />
     </Suspense>
   );
+}
+
+/** Branch-scoped pages need a branch; users without one see how to get access. */
+export function RequireBranch({ children }) {
+  const { branch } = useAuth();
+  return branch ? children : <NoBranchPage />;
 }

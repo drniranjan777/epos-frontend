@@ -1,17 +1,39 @@
 import { lazy } from 'react';
-import { createBrowserRouter } from 'react-router';
+import { createBrowserRouter, Navigate } from 'react-router';
 import { PERMISSIONS as P } from '../constants/permissions';
 import { AppLayout } from '../layouts/AppLayout';
 import { LoginPage } from '../pages/auth/LoginPage';
 import { NotFoundPage } from '../pages/errors/NotFoundPage';
 import { RouteErrorPage } from '../pages/errors/RouteErrorPage';
-import { GuestRoute, HomeRoute, LazyOutlet, ProtectedRoute, RequirePermission } from './guards';
+import {
+  GuestRoute,
+  HomeRoute,
+  LazyOutlet,
+  ProtectedRoute,
+  RequireBranch,
+  RequirePermission,
+} from './guards';
 
 // Pages are code-split so phones only download what they open.
 const page = (loader, name) => lazy(() => loader().then((m) => ({ default: m[name] })));
 
 const DashboardPage = page(() => import('../pages/dashboard/DashboardPage'), 'DashboardPage');
-const StockSearchPage = page(() => import('../pages/inventory/StockSearchPage'), 'StockSearchPage');
+const StockEntryPage = page(() => import('../pages/stock/StockEntryPage'), 'StockEntryPage');
+const MovementListPage = page(() => import('../pages/stock/MovementListPage'), 'MovementListPage');
+const MovementDetailPage = page(
+  () => import('../pages/stock/MovementDetailPage'),
+  'MovementDetailPage',
+);
+const TransferListPage = page(() => import('../pages/stock/TransferListPage'), 'TransferListPage');
+const TransferRequestPage = page(
+  () => import('../pages/stock/TransferRequestPage'),
+  'TransferRequestPage',
+);
+const TransferDetailPage = page(
+  () => import('../pages/stock/TransferDetailPage'),
+  'TransferDetailPage',
+);
+const BranchesPage = page(() => import('../pages/settings/BranchesPage'), 'BranchesPage');
 const StockLevelsPage = page(() => import('../pages/inventory/StockLevelsPage'), 'StockLevelsPage');
 const LedgerPage = page(() => import('../pages/inventory/LedgerPage'), 'LedgerPage');
 const ProductListPage = page(() => import('../pages/products/ProductListPage'), 'ProductListPage');
@@ -48,6 +70,11 @@ const AccountPage = page(() => import('../pages/auth/AccountPage'), 'AccountPage
 /** Wraps a page element with a permission check. */
 const guard = (anyOf, element) => <RequirePermission anyOf={anyOf}>{element}</RequirePermission>;
 
+/** Pages showing branch stock also need a branch to work in. */
+const branchGuard = (anyOf, element) => guard(anyOf, <RequireBranch>{element}</RequireBranch>);
+
+const TRANSFER_ANY = [P.TRANSFER_REQUEST, P.TRANSFER_APPROVE, P.TRANSFER_RECEIVE];
+
 export const router = createBrowserRouter([
   {
     errorElement: <RouteErrorPage />,
@@ -65,25 +92,71 @@ export const router = createBrowserRouter([
               {
                 element: <LazyOutlet />,
                 children: [
-                  { index: true, element: <HomeRoute dashboard={<DashboardPage />} /> },
                   {
-                    path: 'stock',
-                    element: guard([P.INVENTORY_IN, P.INVENTORY_OUT], <StockSearchPage />),
+                    index: true,
+                    element: (
+                      <HomeRoute
+                        dashboard={
+                          <RequireBranch>
+                            <DashboardPage />
+                          </RequireBranch>
+                        }
+                      />
+                    ),
                   },
-                  { path: 'inventory', element: guard([P.INVENTORY_VIEW], <StockLevelsPage />) },
-                  { path: 'inventory/ledger', element: guard([P.INVENTORY_VIEW], <LedgerPage />) },
-                  { path: 'products', element: guard([P.PRODUCTS_VIEW], <ProductListPage />) },
+                  { path: 'stock', element: <Navigate to="/stock/out" replace /> },
+                  {
+                    path: 'stock/out',
+                    element: branchGuard([P.INVENTORY_OUT], <StockEntryPage mode="OUT" />),
+                  },
+                  {
+                    path: 'stock/in',
+                    element: branchGuard([P.INVENTORY_IN], <StockEntryPage mode="IN" />),
+                  },
+                  {
+                    path: 'stock/entries',
+                    element: branchGuard([P.INVENTORY_VIEW], <MovementListPage />),
+                  },
+                  {
+                    path: 'stock/entries/:id',
+                    element: branchGuard([P.INVENTORY_VIEW], <MovementDetailPage />),
+                  },
+                  { path: 'transfers', element: branchGuard(TRANSFER_ANY, <TransferListPage />) },
+                  {
+                    path: 'transfers/new',
+                    element: branchGuard([P.TRANSFER_REQUEST], <TransferRequestPage />),
+                  },
+                  {
+                    path: 'transfers/:id',
+                    element: branchGuard(TRANSFER_ANY, <TransferDetailPage />),
+                  },
+                  {
+                    path: 'settings/branches',
+                    element: guard([P.BRANCHES_MANAGE], <BranchesPage />),
+                  },
+                  {
+                    path: 'inventory',
+                    element: branchGuard([P.INVENTORY_VIEW], <StockLevelsPage />),
+                  },
+                  {
+                    path: 'inventory/ledger',
+                    element: branchGuard([P.INVENTORY_VIEW], <LedgerPage />),
+                  },
+                  {
+                    path: 'products',
+                    element: branchGuard([P.PRODUCTS_VIEW], <ProductListPage />),
+                  },
                   {
                     path: 'products/new',
-                    element: guard([P.PRODUCTS_CREATE], <ProductFormPage />),
+                    element: branchGuard([P.PRODUCTS_CREATE], <ProductFormPage />),
                   },
                   {
                     path: 'products/:id',
-                    element: guard([P.PRODUCTS_VIEW], <ProductDetailPage />),
+                    element: branchGuard([P.PRODUCTS_VIEW], <ProductDetailPage />),
                   },
                   {
                     path: 'products/:id/edit',
-                    element: guard([P.PRODUCTS_UPDATE], <ProductFormPage />),
+                    element: branchGuard([P.PRODUCTS_UPDATE], <ProductFormPage />),
                   },
                   {
                     path: 'customers',
@@ -97,14 +170,20 @@ export const router = createBrowserRouter([
                     path: 'customers/:id/edit',
                     element: guard([P.CUSTOMERS_MANAGE], <CustomerFormPage />),
                   },
-                  { path: 'invoices', element: guard([P.INVOICE_VIEW], <InvoiceListPage />) },
-                  { path: 'invoices/new', element: guard([P.INVOICE_CREATE], <InvoiceFormPage />) },
-                  { path: 'invoices/:id', element: guard([P.INVOICE_VIEW], <InvoiceDetailPage />) },
+                  { path: 'invoices', element: branchGuard([P.INVOICE_VIEW], <InvoiceListPage />) },
+                  {
+                    path: 'invoices/new',
+                    element: branchGuard([P.INVOICE_CREATE], <InvoiceFormPage />),
+                  },
+                  {
+                    path: 'invoices/:id',
+                    element: branchGuard([P.INVOICE_VIEW], <InvoiceDetailPage />),
+                  },
                   {
                     path: 'invoices/:id/edit',
-                    element: guard([P.INVOICE_UPDATE], <InvoiceFormPage />),
+                    element: branchGuard([P.INVOICE_UPDATE], <InvoiceFormPage />),
                   },
-                  { path: 'reports', element: guard([P.REPORTS_VIEW], <ReportsPage />) },
+                  { path: 'reports', element: branchGuard([P.REPORTS_VIEW], <ReportsPage />) },
                   {
                     path: 'users',
                     element: guard([P.USERS_MANAGE, P.ROLES_MANAGE], <UsersPage />),

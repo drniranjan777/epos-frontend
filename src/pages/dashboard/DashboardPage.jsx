@@ -1,4 +1,5 @@
 import {
+  ArrowLeftRight,
   AlertTriangle,
   ArrowDownToLine,
   ArrowUpFromLine,
@@ -40,6 +41,39 @@ function greeting() {
   return 'Good evening';
 }
 
+/** Transfers waiting for this user: approvals (approvers) and incoming stock (receivers). */
+function TransferAlerts({ transfers }) {
+  const { can } = useAuth();
+  const alerts = [
+    can(P.TRANSFER_APPROVE) &&
+      transfers.awaitingApproval > 0 && {
+        to: '/transfers?tab=approval',
+        text: `${transfers.awaitingApproval} transfer request${transfers.awaitingApproval > 1 ? 's' : ''} awaiting approval`,
+      },
+    can(P.TRANSFER_RECEIVE) &&
+      transfers.incoming > 0 && {
+        to: '/transfers?tab=incoming',
+        text: `${transfers.incoming} incoming transfer${transfers.incoming > 1 ? 's' : ''} to receive`,
+      },
+  ].filter(Boolean);
+  if (!alerts.length) return null;
+  return (
+    <div className="grid gap-3 sm:grid-cols-2">
+      {alerts.map((alert) => (
+        <Link
+          key={alert.to}
+          to={alert.to}
+          className="flex items-center gap-3 rounded-xl bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900 ring-1 ring-amber-200 hover:bg-amber-100"
+        >
+          <ArrowLeftRight className="size-5 shrink-0" aria-hidden />
+          <span className="flex-1">{alert.text}</span>
+          <span aria-hidden>→</span>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
 function DashboardSkeleton() {
   return (
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -51,7 +85,7 @@ function DashboardSkeleton() {
 }
 
 export function DashboardPage() {
-  const { user, can, canAny } = useAuth();
+  const { user, can } = useAuth();
   const [range, setRange] = useState('daily');
   const summary = useDashboardSummary();
   const movement = useDashboardMovement(range);
@@ -67,11 +101,18 @@ export function DashboardPage() {
             {greeting()}, {user.name.split(' ')[0]}
           </h1>
         </div>
-        {canAny(P.INVENTORY_IN, P.INVENTORY_OUT) && (
-          <Button to="/stock" variant="brand">
-            Stock IN / OUT
-          </Button>
-        )}
+        <div className="flex flex-wrap gap-2">
+          {can(P.INVENTORY_OUT) && (
+            <Button to="/stock/out" variant="out">
+              <ArrowUpFromLine className="size-4" aria-hidden /> Stock OUT
+            </Button>
+          )}
+          {can(P.INVENTORY_IN) && (
+            <Button to="/stock/in" variant="in">
+              <ArrowDownToLine className="size-4" aria-hidden /> Stock IN
+            </Button>
+          )}
+        </div>
       </div>
 
       {summary.isPending && <DashboardSkeleton />}
@@ -140,6 +181,8 @@ export function DashboardPage() {
               to={can(P.INVENTORY_VIEW) ? '/inventory?stockStatus=out' : undefined}
             />
           </div>
+
+          <TransferAlerts transfers={s.transfers} />
 
           <Card>
             <CardHeader

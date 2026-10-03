@@ -59,3 +59,9 @@ export function todayIso() {
   const now = new Date();
   return new Date(now.getTime() - now.getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
 }
+
+/** "1 part · 5 units" style summary of a stock document. */
+export function partsSummary(parts, units) {
+  const unitCount = Number(units);
+  return `${parts} ${parts === 1 ? 'part' : 'parts'} · ${formatNumber(unitCount)} ${unitCount === 1 ? 'unit' : 'units'}`;
+}

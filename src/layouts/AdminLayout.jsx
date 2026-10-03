@@ -1,4 +1,5 @@
 import { Outlet } from 'react-router';
+import { BranchSelect } from '../components/layout/BranchSelect';
 import { NavList } from '../components/layout/NavList';
 import { UserPanel } from '../components/layout/UserMenu';
 import { APP_NAME } from '../constants/app';
@@ -7,7 +8,7 @@ import { useAuth } from '../hooks/useAuth';
 
 /** Desktop layout: fixed sidebar with grouped navigation and a wide content area. */
 export function AdminLayout() {
-  const { canAny } = useAuth();
+  const { branch, canAny } = useAuth();
 
   return (
     <div className="min-h-dvh">
@@ -16,6 +17,14 @@ export function AdminLayout() {
           <img src="/icon.svg" alt="" className="size-8" />
           <span className="font-semibold text-white">{APP_NAME}</span>
         </div>
+        {branch && (
+          <div className="px-5 pb-2">
+            <BranchSelect
+              tone="dark"
+              className="w-full [&_select]:w-full [&>span:last-child]:flex-1"
+            />
+          </div>
+        )}
         <div className="flex-1 overflow-y-auto px-3 py-4">
           <NavList sections={visibleSections(canAny)} dark />
         </div>

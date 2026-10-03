@@ -8,6 +8,17 @@ export const TXN_TYPES = {
   ADJUSTMENT_OUT: { label: 'Adjustment −', direction: 'out' },
   INVOICE_OUT: { label: 'Invoice', direction: 'out' },
   INVOICE_CANCEL: { label: 'Invoice cancelled', direction: 'in' },
+  TRANSFER_OUT: { label: 'Transfer out', direction: 'out' },
+  TRANSFER_IN: { label: 'Transfer in', direction: 'in' },
+  TRANSFER_RETURN: { label: 'Transfer returned', direction: 'in' },
+};
+
+export const TRANSFER_STATUS = {
+  REQUESTED: { label: 'Awaiting approval', tone: 'warning' },
+  IN_TRANSIT: { label: 'In transit', tone: 'info' },
+  RECEIVED: { label: 'Received', tone: 'success' },
+  REJECTED: { label: 'Rejected', tone: 'danger' },
+  CANCELLED: { label: 'Cancelled', tone: 'neutral' },
 };
 
 export const INVOICE_STATUS = {

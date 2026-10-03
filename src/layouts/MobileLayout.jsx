@@ -1,6 +1,7 @@
 import { Menu, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet } from 'react-router';
+import { BranchSelect } from '../components/layout/BranchSelect';
 import { NavList } from '../components/layout/NavList';
 import { Avatar, UserPanel } from '../components/layout/UserMenu';
 import { APP_NAME } from '../constants/app';
@@ -10,7 +11,7 @@ import { cn } from '../utils/cn';
 
 /** Phone layout: compact top bar, bottom navigation for core modules and a drawer for the rest. */
 export function MobileLayout() {
-  const { user, canAny } = useAuth();
+  const { user, branch, canAny } = useAuth();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const items = bottomNavItems(canAny);
 
@@ -38,7 +39,11 @@ export function MobileLayout() {
           >
             <Menu className="size-6" />
           </button>
-          <span className="truncate text-base font-semibold">{APP_NAME}</span>
+          {branch ? (
+            <BranchSelect tone="dark" showLabel={false} />
+          ) : (
+            <span className="truncate text-base font-semibold">{APP_NAME}</span>
+          )}
           <button
             type="button"
             onClick={() => setDrawerOpen(true)}

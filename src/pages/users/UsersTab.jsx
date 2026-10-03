@@ -1,6 +1,6 @@
 import { Pencil, Plus, UserPlus } from 'lucide-react';
 import { useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
@@ -12,11 +12,68 @@ import { Sheet } from '../../components/common/Sheet';
 import { EmptyState, ListSkeleton, QueryState } from '../../components/common/States';
 import { SelectField, Switch, TextField } from '../../components/forms/Field';
 import { PAGE_SIZE } from '../../constants/app';
+import { PERMISSIONS } from '../../constants/permissions';
 import { useRoles, useSaveUser, useUsers } from '../../hooks/useAdmin';
 import { useAuth } from '../../hooks/useAuth';
 import { useDebounce } from '../../hooks/useDebounce';
+import { useBranchList } from '../../hooks/useStockDocuments';
 import { applyFieldErrors, getErrorMessage } from '../../utils/apiError';
 import { formatDateTime } from '../../utils/format';
+
+/** Branch checkboxes; hidden for roles that may work in every branch. */
+function BranchChecklist({ control, roles }) {
+  const branches = useBranchList({ isActive: true });
+  const roleId = useWatch({ control, name: 'roleId' });
+  const role = roles.find((r) => r.id === Number(roleId));
+  if (role?.permissions.includes(PERMISSIONS.BRANCHES_ALL)) {
+    return (
+      <p className="rounded-lg bg-slate-50 px-3 py-2.5 text-sm text-slate-600">
+        The {role.name} role works in every branch.
+      </p>
+    );
+  }
+  return (
+    <Controller
+      name="branchIds"
+      control={control}
+      render={({ field, fieldState }) => (
+        <fieldset>
+          <legend className="mb-1.5 text-sm font-medium text-slate-700">
+            Branches<span className="ml-0.5 text-red-500">*</span>
+          </legend>
+          <div className="flex flex-wrap gap-2">
+            {(branches.data ?? []).map((b) => {
+              const checked = field.value.includes(b.id);
+              return (
+                <label
+                  key={b.id}
+                  className={`flex h-11 cursor-pointer items-center gap-2 rounded-lg px-3 text-sm ring-1 ${
+                    checked ? 'bg-slate-900 text-white ring-slate-900' : 'bg-white ring-slate-300'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    className="sr-only"
+                    checked={checked}
+                    onChange={() =>
+                      field.onChange(
+                        checked ? field.value.filter((id) => id !== b.id) : [...field.value, b.id],
+                      )
+                    }
+                  />
+                  {b.name}
+                </label>
+              );
+            })}
+          </div>
+          {fieldState.error && (
+            <p className="mt-1 text-sm text-red-600">{fieldState.error.message}</p>
+          )}
+        </fieldset>
+      )}
+    />
+  );
+}
 
 const PASSWORD_RULES = {
   minLength: { value: 8, message: 'At least 8 characters' },
@@ -43,10 +100,17 @@ function UserForm({ user, onClose }) {
       roleId: user?.roleId ?? '',
       password: '',
       isActive: user?.isActive ?? true,
+      branchIds: user?.branchIds ?? [],
     },
   });
 
   async function onSubmit(values) {
+    const role = (roles.data ?? []).find((r) => r.id === Number(values.roleId));
+    const allBranches = role?.permissions.includes(PERMISSIONS.BRANCHES_ALL);
+    if (!allBranches && values.branchIds.length === 0) {
+      setError('branchIds', { message: 'Select at least one branch' });
+      return;
+    }
     const payload = {
       id: user?.id,
       name: values.name.trim(),
@@ -54,6 +118,7 @@ function UserForm({ user, onClose }) {
       email: values.email.trim() || null,
       mobile: values.mobile.trim() || null,
       roleId: Number(values.roleId),
+      branchIds: values.branchIds,
     };
     if (values.password) payload.password = values.password;
     if (isEdit) payload.isActive = values.isActive;
@@ -131,6 +196,7 @@ function UserForm({ user, onClose }) {
               </option>
             ))}
           </SelectField>
+          <BranchChecklist control={control} roles={roles.data ?? []} />
           <TextField
             label={isEdit ? 'Reset password' : 'Password'}
             type="password"
