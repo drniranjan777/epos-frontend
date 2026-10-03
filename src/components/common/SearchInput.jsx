@@ -5,6 +5,7 @@ import { cn } from '../../utils/cn';
 /**
  * Search box with a clear button and, with `voice`, a microphone button that fills the
  * box from speech. The mic only appears where the browser supports speech recognition.
+ * Pass `speech` (from useSpeechRecognition) to handle the recognised text yourself.
  */
 export function SearchInput({
   value,
@@ -13,9 +14,11 @@ export function SearchInput({
   autoFocus,
   className,
   voice = false,
+  speech: externalSpeech,
   ...props
 }) {
-  const speech = useSpeechRecognition({ onResult: onChange });
+  const ownSpeech = useSpeechRecognition({ onResult: onChange });
+  const speech = externalSpeech ?? ownSpeech;
   const showMic = voice && speech.supported;
 
   return (

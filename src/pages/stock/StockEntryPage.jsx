@@ -168,8 +168,8 @@ function StockEntryForm({ mode, branch }) {
         <ProductResults
           branchName={branch.name}
           capped={isOut}
-          onAdd={(product) => {
-            cart.add(product);
+          onAdd={(product, quantity) => {
+            cart.add(product, quantity);
             setServerLineErrors((e) => ({ ...e, [product.id]: undefined }));
           }}
           cartQuantities={Object.fromEntries(cart.lines.map((l) => [l.productId, l.quantity]))}

@@ -8,11 +8,14 @@ export function cartReducer(lines, action) {
   switch (action.type) {
     case 'add': {
       const { product } = action;
+      const quantity = action.quantity ?? 1;
       const existing = lines.find((l) => l.productId === product.id);
       if (existing) {
         // Adding the same part again bumps its quantity instead of duplicating the line.
         return lines.map((l) =>
-          l.productId === product.id ? { ...l, quantity: String(Number(l.quantity || 0) + 1) } : l,
+          l.productId === product.id
+            ? { ...l, quantity: String(Number(l.quantity || 0) + quantity) }
+            : l,
         );
       }
       return [
@@ -25,7 +28,7 @@ export function cartReducer(lines, action) {
           unitCode: product.unitCode,
           allowDecimal: Boolean(product.unitAllowDecimal),
           available: Number(product.stockQuantity),
-          quantity: '1',
+          quantity: String(quantity),
         },
       ];
     }
@@ -97,7 +100,7 @@ export function useStockCart(storageKey, capped) {
     errors,
     totals: cartTotals(lines),
     isValid: lines.length > 0 && Object.values(errors).every((e) => !e),
-    add: useCallback((product) => dispatch({ type: 'add', product }), []),
+    add: useCallback((product, quantity) => dispatch({ type: 'add', product, quantity }), []),
     setQuantity: useCallback(
       (productId, quantity) => dispatch({ type: 'quantity', productId, quantity }),
       [],

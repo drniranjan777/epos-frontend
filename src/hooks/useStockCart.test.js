@@ -28,6 +28,13 @@ describe('stock cart', () => {
     ]);
   });
 
+  it('adds a spoken quantity, and adds it on top when the part is already in the entry', () => {
+    let lines = cartReducer([], { type: 'add', product: oil, quantity: 20 });
+    expect(lines[0].quantity).toBe('20');
+    lines = cartReducer(lines, { type: 'add', product: oil, quantity: 5 });
+    expect(lines[0].quantity).toBe('25');
+  });
+
   it('updates and removes lines', () => {
     let lines = cartReducer([], { type: 'add', product: oil });
     lines = cartReducer(lines, { type: 'quantity', productId: 11, quantity: '2.5' });

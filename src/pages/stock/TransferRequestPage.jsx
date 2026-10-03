@@ -152,7 +152,7 @@ function TransferForm({ branch }) {
             <ProductResults
               branchName={branch.name}
               capped
-              onAdd={(product) => cart.add(product)}
+              onAdd={(product, quantity) => cart.add(product, quantity)}
               cartQuantities={Object.fromEntries(cart.lines.map((l) => [l.productId, l.quantity]))}
             />
           </div>
