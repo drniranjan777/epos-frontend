@@ -61,7 +61,7 @@ export function MovementDetailPage() {
           <Detail label="Invoice number">
             {m.noBill ? <Badge>No bill</Badge> : m.invoiceNumber}
           </Detail>
-          <Detail label={m.type === 'IN' ? 'Supplier' : 'Customer'}>{m.partyName}</Detail>
+          <Detail label="Customer">{m.partyName}</Detail>
           <Detail label="Recorded by">{m.createdByName}</Detail>
           <Detail label="Recorded at">{formatDateTime(m.createdAt)}</Detail>
         </dl>

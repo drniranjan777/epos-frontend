@@ -4,11 +4,12 @@ import { Link, useNavigate } from 'react-router';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '../../components/common/ConfirmDialog';
 import { Field, Input, Switch, Textarea } from '../../components/forms/Field';
-import { PartyInput } from '../../components/forms/PartyInput';
+import { CustomerSelect } from '../../components/forms/CustomerSelect';
 import { BranchSelect } from '../../components/layout/BranchSelect';
 import { CartFooter } from '../../components/stock/CartFooter';
 import { CartTable } from '../../components/stock/CartTable';
 import { ProductResults } from '../../components/stock/ProductResults';
+import { PERMISSIONS as P } from '../../constants/permissions';
 import { useAuth } from '../../hooks/useAuth';
 import { useStockCart } from '../../hooks/useStockCart';
 import { useCreateMovement } from '../../hooks/useStockDocuments';
@@ -21,23 +22,21 @@ const MODES = {
     title: 'Stock OUT',
     action: 'OUT',
     variant: 'out',
-    partyLabel: 'Customer',
-    partyPlaceholder: 'Enter customer name',
     accent: 'text-stock-out',
   },
   IN: {
     title: 'Stock IN',
     action: 'IN',
     variant: 'in',
-    partyLabel: 'Supplier',
-    partyPlaceholder: 'Enter supplier name',
     accent: 'text-stock-in',
   },
 };
 
 const EMPTY_DETAILS = {
   invoiceNumber: '',
-  party: { name: '', customerId: null },
+  customer: null,
+  // Text typed in the customer box that has not been picked or added yet.
+  customerSearch: '',
   noBill: false,
   note: '',
 };
@@ -57,10 +56,12 @@ function StockEntryForm({ mode, branch }) {
   const config = MODES[mode];
   const isOut = mode === 'OUT';
   const navigate = useNavigate();
+  const { canAny } = useAuth();
   const cart = useStockCart(`jcb-inventory:stock-${mode}:${branch.id}`, isOut);
   const create = useCreateMovement();
   const [details, setDetails] = useState(EMPTY_DETAILS);
   const [invoiceError, setInvoiceError] = useState(null);
+  const [customerError, setCustomerError] = useState(null);
   const [serverLineErrors, setServerLineErrors] = useState({});
   const [dialog, setDialog] = useState(null);
 
@@ -70,6 +71,7 @@ function StockEntryForm({ mode, branch }) {
     cart.reset();
     setDetails(EMPTY_DETAILS);
     setInvoiceError(null);
+    setCustomerError(null);
     setServerLineErrors({});
     setDialog(null);
   }
@@ -81,6 +83,10 @@ function StockEntryForm({ mode, branch }) {
       setInvoiceError('Enter the invoice number, or switch on "No bill"');
       return undefined;
     }
+    if (!details.noBill && !details.customer && details.customerSearch.trim()) {
+      setCustomerError('Pick a customer from the list or add a new one');
+      return undefined;
+    }
     return setDialog('confirm');
   }
 
@@ -90,8 +96,7 @@ function StockEntryForm({ mode, branch }) {
         type: mode,
         noBill: details.noBill,
         invoiceNumber: details.noBill ? null : details.invoiceNumber.trim(),
-        partyName: details.noBill ? null : details.party.name.trim() || null,
-        customerId: !details.noBill && isOut ? details.party.customerId : null,
+        customerId: details.noBill ? null : (details.customer?.id ?? null),
         note: details.note.trim() || null,
         items: cart.lines.map((l) => ({ productId: l.productId, quantity: Number(l.quantity) })),
       });
@@ -143,13 +148,20 @@ function StockEntryForm({ mode, branch }) {
             />
           )}
         </Field>
-        <PartyInput
-          label={config.partyLabel}
-          placeholder={config.partyPlaceholder}
-          value={details.party}
+        <CustomerSelect
+          value={details.customer}
+          onChange={(customer) => {
+            update({ customer });
+            setCustomerError(null);
+          }}
+          search={details.customerSearch}
+          onSearchChange={(customerSearch) => {
+            update({ customerSearch });
+            setCustomerError(null);
+          }}
           disabled={details.noBill}
-          suggestCustomers={isOut}
-          onChange={(party) => update({ party })}
+          error={customerError}
+          canCreate={canAny(P.CUSTOMERS_MANAGE, P.INVENTORY_IN, P.INVENTORY_OUT)}
         />
         <div className="sm:pt-1">
           <p className="mb-1.5 text-sm font-medium text-slate-700 max-sm:hidden">No bill</p>
@@ -159,6 +171,7 @@ function StockEntryForm({ mode, branch }) {
             onChange={(noBill) => {
               update({ noBill });
               setInvoiceError(null);
+              setCustomerError(null);
             }}
           />
         </div>
@@ -225,6 +238,9 @@ function StockEntryForm({ mode, branch }) {
           {partsSummary(cart.totals.parts, cart.totals.units)} at{' '}
           <span className="font-semibold text-slate-900">{branch.name}</span>
           {details.noBill ? ' (no bill)' : ` · invoice ${details.invoiceNumber.trim()}`}
+          {!details.noBill && details.customer && (
+            <> · {details.customer.companyName || details.customer.name}</>
+          )}
         </p>
         <ul className="mt-3 max-h-48 space-y-1 overflow-y-auto text-sm">
           {cart.lines.map((l) => (

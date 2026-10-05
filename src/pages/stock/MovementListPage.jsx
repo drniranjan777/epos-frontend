@@ -35,7 +35,7 @@ export function MovementListPage() {
     { header: 'Type', cell: (m) => <MovementTypeBadge type={m.type} /> },
     { header: 'Date', cell: (m) => formatDate(m.movementDate) },
     { header: 'Invoice', cell: (m) => (m.noBill ? <Badge>No bill</Badge> : m.invoiceNumber) },
-    { header: 'Customer / Supplier', cell: (m) => m.partyName ?? '—' },
+    { header: 'Customer', cell: (m) => m.partyName ?? '—' },
     {
       header: 'Parts',
       align: 'right',
