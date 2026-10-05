@@ -1,6 +1,5 @@
 import {
   AudioLines,
-  Check,
   Maximize2,
   Mic,
   Minimize2,
@@ -10,31 +9,20 @@ import {
   SquarePen,
   X,
 } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { PERMISSIONS as P } from '../../constants/permissions';
+import { VOICE_LANGUAGES, readVoiceLanguage, saveVoiceLanguage } from '../../constants/voice';
 import { useAskStock } from '../../hooks/useAskStock';
 import { useAuth } from '../../hooks/useAuth';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 import { cn } from '../../utils/cn';
+import { Select } from '../forms/Field';
 import { AskStockCards } from './AskStockCards';
 
-// Shared with voice search on the stock screens.
-const LANGUAGE_KEY = 'jcb-inventory:voice-language';
-const LANGUAGES = [
-  { code: 'en-IN', label: 'English / Hinglish' },
-  { code: 'hi-IN', label: 'हिन्दी' },
-];
 const MIC_BLOCKED = ['not-allowed', 'service-not-allowed'];
-
-function readLanguage() {
-  try {
-    const stored = localStorage.getItem(LANGUAGE_KEY);
-    return LANGUAGES.some((l) => l.code === stored) ? stored : 'en-IN';
-  } catch {
-    return 'en-IN';
-  }
-}
+// Answers are in English, so they are read aloud with an English (India) voice.
+const ANSWER_VOICE = 'en-IN';
 
 function greeting() {
   const hour = new Date().getHours();
@@ -58,7 +46,8 @@ function suggestedQuestions(can, canAny) {
 const speechSynthesisAvailable = typeof window !== 'undefined' && 'speechSynthesis' in window;
 
 /** Reads an answer aloud; `onEnd` runs when done (or straight away if speech is unavailable). */
-function speak(text, lang, onEnd) {
+function speak(text, onEnd) {
+  const lang = ANSWER_VOICE;
   if (!speechSynthesisAvailable) {
     onEnd();
     return;
@@ -74,31 +63,36 @@ function speak(text, lang, onEnd) {
 }
 
 function MoreMenu({ language, onLanguage, onNewChat, onClose }) {
+  const selectId = useId();
   return (
     <>
       <div className="fixed inset-0 z-10" onClick={onClose} aria-hidden />
-      <div
-        role="menu"
-        className="absolute bottom-full left-0 z-20 mb-2 w-56 rounded-xl bg-white p-1 shadow-lg ring-1 ring-slate-200"
-      >
-        <p className="px-3 pt-2 pb-1 text-xs font-semibold text-slate-500">Voice language</p>
-        {LANGUAGES.map((l) => (
-          <button
-            key={l.code}
-            type="button"
-            role="menuitemradio"
-            aria-checked={language === l.code}
-            onClick={() => onLanguage(l.code)}
-            className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm hover:bg-slate-100"
+      <div className="absolute bottom-full left-0 z-20 mb-2 w-72 rounded-xl bg-white p-1 shadow-lg ring-1 ring-slate-200">
+        <div className="px-3 pt-2 pb-3">
+          <p className="text-sm font-semibold text-slate-900">Voice</p>
+          <label htmlFor={selectId} className="mt-2 block text-sm text-slate-600">
+            I speak
+          </label>
+          <Select
+            id={selectId}
+            value={language}
+            onChange={(e) => onLanguage(e.target.value)}
+            className="mt-1.5 w-full"
           >
-            {l.label}
-            {language === l.code && <Check className="size-4 text-slate-700" aria-hidden />}
-          </button>
-        ))}
+            {VOICE_LANGUAGES.map((l) => (
+              <option key={l.code} value={l.code} lang={l.code}>
+                {l.label}
+              </option>
+            ))}
+          </Select>
+          <p className="mt-1.5 text-xs text-slate-500">
+            Speak in {VOICE_LANGUAGES.find((l) => l.code === language)?.hint}. Answers are shown in
+            English.
+          </p>
+        </div>
         <div className="my-1 border-t border-slate-100" />
         <button
           type="button"
-          role="menuitem"
           onClick={onNewChat}
           className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-slate-100"
         >
@@ -139,7 +133,7 @@ export function AskStockPanel({ onClose }) {
   const [input, setInput] = useState('');
   const [expanded, setExpanded] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [language, setLanguage] = useState(readLanguage);
+  const [language, setLanguage] = useState(readVoiceLanguage);
   const [voiceMode, setVoiceMode] = useState(false);
   const inputRef = useRef(null);
   const endRef = useRef(null);
@@ -151,10 +145,10 @@ export function AskStockPanel({ onClose }) {
       const reply = await ask(message, options);
       if (reply && voiceModeRef.current) {
         // Voice mode: read the answer, then listen for the next question.
-        speak(reply.text, language, () => voiceModeRef.current && speechRef.current.start());
+        speak(reply.text, () => voiceModeRef.current && speechRef.current.start());
       }
     },
-    [ask, language],
+    [ask],
   );
 
   const speech = useSpeechRecognition({
@@ -224,12 +218,7 @@ export function AskStockPanel({ onClose }) {
 
   const changeLanguage = (code) => {
     setLanguage(code);
-    setMenuOpen(false);
-    try {
-      localStorage.setItem(LANGUAGE_KEY, code);
-    } catch {
-      // The choice then lasts for this visit only.
-    }
+    saveVoiceLanguage(code);
   };
 
   const toggleMic = () => {

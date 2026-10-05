@@ -1,5 +1,6 @@
 import { Check, Mic, PackageSearch, Plus, X } from 'lucide-react';
 import { useState } from 'react';
+import { VOICE_LANGUAGES, readVoiceLanguage, saveVoiceLanguage } from '../../constants/voice';
 import { useDebounce } from '../../hooks/useDebounce';
 import { useProductSearch } from '../../hooks/useInventory';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
@@ -16,34 +17,20 @@ const PILL_TONES = {
   out: 'bg-red-50 text-red-700',
 };
 
-const LANGUAGES = [
-  { code: 'en-IN', label: 'English / Hinglish' },
-  { code: 'hi-IN', label: 'हिन्दी' },
-];
-const LANGUAGE_KEY = 'jcb-inventory:voice-language';
-
 const EXAMPLES = {
   'en-IN': [
     'JCB 3DX hydraulic filter',
     '3DX ka fuel filter 10 piece',
     'Part number 320 slash 04133',
   ],
+  'te-IN': ['జెసిబి హైడ్రాలిక్ ఫిల్టర్', 'బకెట్ టూత్ పది పీసులు'],
   'hi-IN': ['जेसीबी का हाइड्रोलिक फ़िल्टर', 'बकेट पिन दस पीस'],
 };
-
-function readLanguage() {
-  try {
-    const stored = localStorage.getItem(LANGUAGE_KEY);
-    return LANGUAGES.some((l) => l.code === stored) ? stored : 'en-IN';
-  } catch {
-    return 'en-IN';
-  }
-}
 
 function LanguageToggle({ value, onChange }) {
   return (
     <div role="radiogroup" aria-label="Voice language" className="flex gap-1.5">
-      {LANGUAGES.map((language) => (
+      {VOICE_LANGUAGES.map((language) => (
         <button
           key={language.code}
           type="button"
@@ -57,7 +44,7 @@ function LanguageToggle({ value, onChange }) {
               : 'bg-white text-slate-600 ring-slate-300',
           )}
         >
-          {language.label}
+          <span lang={language.code}>{language.label}</span>
         </button>
       ))}
     </div>
@@ -71,7 +58,7 @@ function LanguageToggle({ value, onChange }) {
  */
 export function ProductResults({ branchName, capped, onAdd, cartQuantities }) {
   const [search, setSearch] = useState('');
-  const [language, setLanguage] = useState(readLanguage);
+  const [language, setLanguage] = useState(readVoiceLanguage);
   // What was heard and understood from the last voice search; cleared when typing.
   const [voice, setVoice] = useState(null);
   const term = useDebounce(search.trim(), 250);
@@ -90,11 +77,7 @@ export function ProductResults({ branchName, capped, onAdd, cartQuantities }) {
 
   function changeLanguage(code) {
     setLanguage(code);
-    try {
-      localStorage.setItem(LANGUAGE_KEY, code);
-    } catch {
-      // Remembering the language is a convenience only.
-    }
+    saveVoiceLanguage(code);
   }
 
   function add(product) {

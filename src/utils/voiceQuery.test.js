@@ -24,6 +24,17 @@ describe('parseVoiceQuery', () => {
     expect(parseVoiceQuery('जे सी बी बकेट पिन').query).toBe('jcb bucket pin');
   });
 
+  it('understands Telugu part words, endings and quantities', () => {
+    expect(parseVoiceQuery('జెసిబి హైడ్రాలిక్ ఫిల్టర్ కావాలి').query).toBe('jcb hydraulic filter');
+    expect(parseVoiceQuery('3డిఎక్స్ ఫ్యూయల్ ఫిల్టర్లు చూపించండి').query).toBe('3dx fuel filter');
+    expect(parseVoiceQuery('బకెట్ టూత్ పది పీసులు')).toEqual({
+      query: 'bucket tooth',
+      quantity: 10,
+    });
+    expect(parseVoiceQuery('పీసీ 200 ట్రాక్ రోలర్ ఎన్ని ఉన్నాయి').query).toBe('pc200 track roller');
+    expect(parseVoiceQuery('౩౨౦ స్లాష్ ౦౪౧౩౩').query).toBe('320/04133');
+  });
+
   it('does not break longer Hindi words that contain a shorter known word', () => {
     // "अल्टरनेटर" contains "नट" (nut) but must map to alternator only.
     expect(parseVoiceQuery('अल्टरनेटर').query).toBe('alternator');
