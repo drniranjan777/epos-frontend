@@ -1,6 +1,8 @@
-import { Menu, X } from 'lucide-react';
+import { Menu, Sparkles, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet } from 'react-router';
+import { AskStockPanel } from '../components/askStock/AskStockPanel';
+import { ASK_STOCK_PERMISSIONS } from '../components/askStock/askStockAccess';
 import { BranchSelect } from '../components/layout/BranchSelect';
 import { NavList } from '../components/layout/NavList';
 import { Avatar, UserPanel } from '../components/layout/UserMenu';
@@ -13,6 +15,8 @@ import { cn } from '../utils/cn';
 export function MobileLayout() {
   const { user, branch, canAny } = useAuth();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [askOpen, setAskOpen] = useState(false);
+  const showAsk = Boolean(branch) && canAny(...ASK_STOCK_PERMISSIONS);
   const items = bottomNavItems(canAny);
 
   // Lock background scroll and support Escape while the drawer is open.
@@ -44,14 +48,26 @@ export function MobileLayout() {
           ) : (
             <span className="truncate text-base font-semibold">{APP_NAME}</span>
           )}
-          <button
-            type="button"
-            onClick={() => setDrawerOpen(true)}
-            className="rounded-full p-1"
-            aria-label="Account"
-          >
-            <Avatar name={user.name} className="size-8 text-xs" />
-          </button>
+          <div className="flex items-center">
+            {showAsk && (
+              <button
+                type="button"
+                onClick={() => setAskOpen(true)}
+                className="rounded-lg p-2.5 hover:bg-slate-800"
+                aria-label="Ask Stock"
+              >
+                <Sparkles className="text-brand-400 size-5" />
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setDrawerOpen(true)}
+              className="rounded-full p-1"
+              aria-label="Account"
+            >
+              <Avatar name={user.name} className="size-8 text-xs" />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -106,6 +122,8 @@ export function MobileLayout() {
           </li>
         </ul>
       </nav>
+
+      {showAsk && askOpen && <AskStockPanel onClose={() => setAskOpen(false)} />}
 
       {drawerOpen && (
         <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label="Menu">

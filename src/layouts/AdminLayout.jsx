@@ -1,4 +1,8 @@
+import { Sparkles } from 'lucide-react';
+import { useState } from 'react';
 import { Outlet } from 'react-router';
+import { AskStockPanel } from '../components/askStock/AskStockPanel';
+import { ASK_STOCK_PERMISSIONS } from '../components/askStock/askStockAccess';
 import { BranchSelect } from '../components/layout/BranchSelect';
 import { NavList } from '../components/layout/NavList';
 import { UserPanel } from '../components/layout/UserMenu';
@@ -9,6 +13,8 @@ import { useAuth } from '../hooks/useAuth';
 /** Desktop layout: fixed sidebar with grouped navigation and a wide content area. */
 export function AdminLayout() {
   const { branch, canAny } = useAuth();
+  const [askOpen, setAskOpen] = useState(false);
+  const showAsk = Boolean(branch) && canAny(...ASK_STOCK_PERMISSIONS);
 
   return (
     <div className="min-h-dvh">
@@ -25,6 +31,18 @@ export function AdminLayout() {
             />
           </div>
         )}
+        {showAsk && (
+          <div className="px-5 pt-2">
+            <button
+              type="button"
+              onClick={() => setAskOpen(true)}
+              className="flex h-10 w-full items-center gap-2 rounded-lg bg-slate-800 px-3 text-sm font-medium text-slate-100 transition hover:bg-slate-700"
+            >
+              <Sparkles className="text-brand-400 size-4" aria-hidden />
+              Ask Stock
+            </button>
+          </div>
+        )}
         <div className="flex-1 overflow-y-auto px-3 py-4">
           <NavList sections={visibleSections(canAny)} dark />
         </div>
@@ -37,6 +55,7 @@ export function AdminLayout() {
           <Outlet />
         </div>
       </main>
+      {showAsk && askOpen && <AskStockPanel onClose={() => setAskOpen(false)} />}
     </div>
   );
 }
