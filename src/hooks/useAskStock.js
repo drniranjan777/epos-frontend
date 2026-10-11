@@ -22,13 +22,15 @@ const newId = () => (nextId += 1);
  * Ask Stock conversation. Kept for this browser session only (sessionStorage), per user;
  * `context` is the part discussed last so "and its price?" works.
  *
- * Messages: { id, role: 'user'|'assistant', text, cards?, suggestions?, error? }
+ * Messages: { id, role: 'user'|'assistant', text, cards?, suggestions?, language?, error? }
  */
 export function useAskStock(userId) {
   const key = `${STORAGE_PREFIX}${userId}`;
   const [chat, setChat] = useState(() => readChat(key));
   const [pending, setPending] = useState(false);
   const chatRef = useRef(chat);
+  // Bumped by "New chat" so an answer still on its way is not added to the new chat.
+  const chatNumber = useRef(0);
 
   useEffect(() => {
     chatRef.current = chat;
@@ -41,14 +43,16 @@ export function useAskStock(userId) {
 
   /**
    * @param {string} message   question sent to the server
-   * @param {{ display?: string, context?: object }} [options]
-   *   display: what the chat shows instead of `message`; context: overrides the last part.
-   * @returns {Promise<object|null>} the assistant message, or null if nothing was sent
+   * @param {{ display?: string, context?: object, language?: string }} [options]
+   *   display: what the chat shows instead of `message`; context: overrides the last part;
+   *   language: language of the answer ('en' | 'hi' | 'te').
+   * @returns {Promise<object|null>} the assistant message, or null if nothing was added
    */
   const ask = useCallback(
-    async (message, { display, context } = {}) => {
+    async (message, { display, context, language } = {}) => {
       const text = message.trim();
       if (!text || pending) return null;
+      const asked = chatNumber.current;
       const userMessage = { id: newId(), role: 'user', text: display ?? text };
       setChat((c) => ({ ...c, messages: [...c.messages, userMessage].slice(-MAX_MESSAGES) }));
       setPending(true);
@@ -56,13 +60,14 @@ export function useAskStock(userId) {
       let reply;
       let nextContext = context ?? chatRef.current.context;
       try {
-        const data = await askStockService.ask(text, nextContext);
+        const data = await askStockService.ask(text, nextContext, language);
         reply = {
           id: newId(),
           role: 'assistant',
           text: data.reply,
           cards: data.cards,
           suggestions: data.suggestions,
+          language: data.language,
         };
         if (data.context) nextContext = data.context;
       } catch (error) {
@@ -70,6 +75,7 @@ export function useAskStock(userId) {
       } finally {
         setPending(false);
       }
+      if (asked !== chatNumber.current) return null;
       setChat((c) => ({
         messages: [...c.messages, reply].slice(-MAX_MESSAGES),
         context: nextContext,
@@ -79,7 +85,11 @@ export function useAskStock(userId) {
     [pending],
   );
 
-  const reset = useCallback(() => setChat({ messages: [], context: null }), []);
+  const reset = useCallback(() => {
+    chatNumber.current += 1;
+    setPending(false);
+    setChat({ messages: [], context: null });
+  }, []);
 
   return { messages: chat.messages, pending, ask, reset };
 }

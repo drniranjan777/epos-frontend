@@ -1,18 +1,25 @@
 /**
  * Languages people can speak to voice search and Ask Stock. `code` is the browser speech
- * recognition language; the parser understands part words, numbers and questions in each.
- * Answers are written (and read aloud) in English.
+ * locale (recognition and read-aloud); `short` is the language sent to the server, which
+ * answers Ask Stock questions in it. Add a language here, in askStockStrings.js and in the
+ * server's askStock/messages.js.
  */
 export const VOICE_LANGUAGES = [
-  { code: 'en-IN', label: 'English', hint: 'English or Hinglish' },
-  { code: 'te-IN', label: 'తెలుగు', hint: 'Telugu' },
-  { code: 'hi-IN', label: 'हिन्दी', hint: 'Hindi' },
+  { code: 'en-IN', short: 'en', label: 'English' },
+  { code: 'te-IN', short: 'te', label: 'తెలుగు' },
+  { code: 'hi-IN', short: 'hi', label: 'हिन्दी' },
 ];
 
 const STORAGE_KEY = 'jcb-inventory:voice-language';
 const DEFAULT_LANGUAGE = 'en-IN';
 
-/** The language chosen last time (shared by every voice feature), or English. */
+/** 'te-IN' → 'te' */
+export const shortLanguage = (code) => VOICE_LANGUAGES.find((l) => l.code === code)?.short ?? 'en';
+
+/** 'te' → 'te-IN' (null if the language is not offered) */
+export const languageCode = (short) => VOICE_LANGUAGES.find((l) => l.short === short)?.code ?? null;
+
+/** The language chosen last time on this device (shared by every voice feature), or English. */
 export function readVoiceLanguage() {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);

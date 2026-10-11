@@ -2,7 +2,8 @@ import { ChevronRight, MapPin } from 'lucide-react';
 import { Link } from 'react-router';
 import { cn } from '../../utils/cn';
 import { formatCurrency, formatQty } from '../../utils/format';
-import { StockBadge } from '../inventory/StockBadge';
+import { stockStatus } from '../../utils/stock';
+import { Badge } from '../common/Badge';
 
 /** Asks about one part from a list ("its stock" with that part as context). */
 function askAbout(onAsk, part) {
@@ -12,7 +13,22 @@ function askAbout(onAsk, part) {
   });
 }
 
-function PartCard({ part, canOpen, onNavigate }) {
+function StatusBadge({ part, strings }) {
+  const status = stockStatus(part);
+  if (status === 'out') return <Badge tone="danger">{strings.outOfStock}</Badge>;
+  if (status === 'low') return <Badge tone="warning">{strings.lowStock}</Badge>;
+  return null;
+}
+
+function CardTitle({ children }) {
+  return (
+    <p className="border-b border-slate-100 px-3 py-2 text-xs font-semibold tracking-wide text-slate-500 uppercase">
+      {children}
+    </p>
+  );
+}
+
+function PartCard({ part, strings, canOpen, onNavigate }) {
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-3">
       <div className="flex items-start justify-between gap-2">
@@ -24,7 +40,7 @@ function PartCard({ part, canOpen, onNavigate }) {
             {part.machineModel && ` · ${part.machineModel}`}
           </p>
         </div>
-        <StockBadge product={part} />
+        <StatusBadge part={part} strings={strings} />
       </div>
 
       <ul className="mt-3 divide-y divide-slate-100 rounded-lg bg-slate-50 text-sm">
@@ -34,7 +50,7 @@ function PartCard({ part, canOpen, onNavigate }) {
               <MapPin className="size-3.5 text-slate-400" aria-hidden />
               {b.branchName}
               {b.isCurrent && (
-                <span className="text-xs font-normal text-slate-500">(this branch)</span>
+                <span className="text-xs font-normal text-slate-500">{strings.thisBranch}</span>
               )}
             </span>
             <span
@@ -51,20 +67,20 @@ function PartCard({ part, canOpen, onNavigate }) {
 
       <dl className="mt-3 grid grid-cols-3 gap-2 text-xs">
         <div>
-          <dt className="text-slate-500">Price</dt>
+          <dt className="text-slate-500">{strings.price}</dt>
           <dd className="font-semibold text-slate-900">{formatCurrency(part.sellingPrice)}</dd>
         </div>
         <div>
-          <dt className="text-slate-500">MRP</dt>
+          <dt className="text-slate-500">{strings.mrp}</dt>
           <dd className="font-semibold text-slate-900">{formatCurrency(part.mrp)}</dd>
         </div>
         <div>
-          <dt className="text-slate-500">Min level</dt>
+          <dt className="text-slate-500">{strings.minLevel}</dt>
           <dd className="font-semibold text-slate-900">{formatQty(part.minStockLevel)}</dd>
         </div>
         {part.purchasePrice !== undefined && (
           <div>
-            <dt className="text-slate-500">Purchase</dt>
+            <dt className="text-slate-500">{strings.purchase}</dt>
             <dd className="font-semibold text-slate-900">{formatCurrency(part.purchasePrice)}</dd>
           </div>
         )}
@@ -76,19 +92,17 @@ function PartCard({ part, canOpen, onNavigate }) {
           onClick={onNavigate}
           className="text-brand-700 mt-3 inline-flex items-center gap-1 text-sm font-semibold hover:underline"
         >
-          Open product <ChevronRight className="size-4" aria-hidden />
+          {strings.openProduct} <ChevronRight className="size-4" aria-hidden />
         </Link>
       )}
     </div>
   );
 }
 
-function PartsCard({ title, parts, onAsk }) {
+function PartsCard({ title, parts, strings, onAsk }) {
   return (
     <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-      <p className="border-b border-slate-100 px-3 py-2 text-xs font-semibold tracking-wide text-slate-500 uppercase">
-        {title}
-      </p>
+      <CardTitle>{title}</CardTitle>
       <ul className="divide-y divide-slate-100">
         {parts.map((p) => (
           <li key={p.id}>
@@ -108,7 +122,7 @@ function PartsCard({ title, parts, onAsk }) {
                 <span className="text-sm font-semibold tabular-nums">
                   {formatQty(p.stockQuantity, p.unitCode)}
                 </span>
-                <StockBadge product={p} />
+                <StatusBadge part={p} strings={strings} />
               </span>
             </button>
           </li>
@@ -118,12 +132,11 @@ function PartsCard({ title, parts, onAsk }) {
   );
 }
 
+/** Rows about a part (`productId`) can be tapped to ask about it; other rows are plain. */
 function TableCard({ title, columns, rows, onAsk }) {
   return (
     <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-      <p className="border-b border-slate-100 px-3 py-2 text-xs font-semibold tracking-wide text-slate-500 uppercase">
-        {title}
-      </p>
+      <CardTitle>{title}</CardTitle>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-xs text-slate-500">
@@ -144,7 +157,7 @@ function TableCard({ title, columns, rows, onAsk }) {
           </thead>
           <tbody className="divide-y divide-slate-100">
             {rows.map((row) => (
-              <tr key={row.productId}>
+              <tr key={row.key ?? row.productId} className={cn(row.highlight && 'bg-brand-50')}>
                 {columns.map((c, index) => (
                   <td
                     key={c.key}
@@ -153,13 +166,14 @@ function TableCard({ title, columns, rows, onAsk }) {
                       c.align === 'right'
                         ? 'text-right whitespace-nowrap tabular-nums'
                         : 'text-left',
+                      index === 0 && 'font-medium text-slate-900',
                     )}
                   >
-                    {index === 0 ? (
+                    {index === 0 && row.productId ? (
                       <button
                         type="button"
                         onClick={() => askAbout(onAsk, row)}
-                        className="text-left font-medium text-slate-900 hover:underline"
+                        className="text-left hover:underline"
                       >
                         {row[c.key]}
                         {row.sku && (
@@ -182,8 +196,8 @@ function TableCard({ title, columns, rows, onAsk }) {
   );
 }
 
-/** Renders the cards of one Ask Stock answer. */
-export function AskStockCards({ cards, onAsk, canOpenProducts, onNavigate }) {
+/** Renders the cards of one Ask Stock answer; `strings` is the panel text in its language. */
+export function AskStockCards({ cards, strings, onAsk, canOpenProducts, onNavigate }) {
   if (!cards?.length) return null;
   return (
     <div className="mt-2 space-y-2">
@@ -193,12 +207,15 @@ export function AskStockCards({ cards, onAsk, canOpenProducts, onNavigate }) {
             <PartCard
               key={index}
               part={card.part}
+              strings={strings}
               canOpen={canOpenProducts}
               onNavigate={onNavigate}
             />
           );
         }
-        if (card.type === 'parts') return <PartsCard key={index} {...card} onAsk={onAsk} />;
+        if (card.type === 'parts') {
+          return <PartsCard key={index} {...card} strings={strings} onAsk={onAsk} />;
+        }
         if (card.type === 'table') return <TableCard key={index} {...card} onAsk={onAsk} />;
         return null;
       })}

@@ -55,6 +55,18 @@ export function AdminLayout() {
           <Outlet />
         </div>
       </main>
+      {/* Sits above the sticky save bars at the bottom of forms. */}
+      {showAsk && !askOpen && (
+        <button
+          type="button"
+          onClick={() => setAskOpen(true)}
+          aria-label="Ask Stock"
+          title="Ask Stock"
+          className="bg-brand-500 hover:bg-brand-400 fixed right-6 bottom-24 z-40 flex size-14 items-center justify-center rounded-full text-slate-950 shadow-lg ring-4 ring-white transition hover:scale-105"
+        >
+          <Sparkles className="size-6" aria-hidden />
+        </button>
+      )}
       {showAsk && askOpen && <AskStockPanel onClose={() => setAskOpen(false)} />}
     </div>
   );

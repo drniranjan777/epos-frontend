@@ -1,3 +1,4 @@
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import {
   AudioLines,
   Maximize2,
@@ -7,71 +8,79 @@ import {
   SendHorizontal,
   Sparkles,
   SquarePen,
+  VolumeX,
   X,
 } from 'lucide-react';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { PERMISSIONS as P } from '../../constants/permissions';
-import { VOICE_LANGUAGES, readVoiceLanguage, saveVoiceLanguage } from '../../constants/voice';
+import {
+  VOICE_LANGUAGES,
+  languageCode,
+  readVoiceLanguage,
+  saveVoiceLanguage,
+  shortLanguage,
+} from '../../constants/voice';
 import { useAskStock } from '../../hooks/useAskStock';
 import { useAuth } from '../../hooks/useAuth';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
+import { askStockService } from '../../services/askStockService';
 import { cn } from '../../utils/cn';
-import { Select } from '../forms/Field';
+import { Select, Switch } from '../forms/Field';
 import { AskStockCards } from './AskStockCards';
+import { askStockStrings, speechErrorText } from './askStockStrings';
 
-const MIC_BLOCKED = ['not-allowed', 'service-not-allowed'];
-// Answers are in English, so they are read aloud with an English (India) voice.
-const ANSWER_VOICE = 'en-IN';
+const READ_ALOUD_KEY = 'jcb-inventory:ask-stock-read-aloud';
 
-function greeting() {
-  const hour = new Date().getHours();
-  if (hour < 12) return 'Good morning';
-  if (hour < 17) return 'Good afternoon';
-  return 'Good evening';
+function readReadAloud() {
+  try {
+    return localStorage.getItem(READ_ALOUD_KEY) === '1';
+  } catch {
+    return false;
+  }
 }
 
-function suggestedQuestions(can, canAny) {
-  const questions = [];
-  if (canAny(P.PRODUCTS_VIEW, P.INVENTORY_VIEW)) {
-    questions.push('PC200 track roller, how many in stock?');
-  }
-  if (can(P.INVENTORY_VIEW)) {
-    questions.push('What should I reorder this week?', 'Which parts have not moved in two months?');
-  }
-  if (can(P.DASHBOARD_VIEW)) questions.push('Today’s sales and stock out?');
-  return questions.slice(0, 4);
+function greetingKey() {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'morning';
+  if (hour < 17) return 'afternoon';
+  return 'evening';
 }
 
 const speechSynthesisAvailable = typeof window !== 'undefined' && 'speechSynthesis' in window;
 
-/** Reads an answer aloud; `onEnd` runs when done (or straight away if speech is unavailable). */
-function speak(text, onEnd) {
-  const lang = ANSWER_VOICE;
+/**
+ * Reads an answer aloud in the given speech locale ('hi-IN'…), using a voice of that
+ * language when the device has one. `onEnd` runs when done, stopped or unavailable.
+ */
+function speak(text, locale, onEnd) {
   if (!speechSynthesisAvailable) {
     onEnd();
     return;
   }
   window.speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(text.replace(/₹/g, 'rupees '));
-  utterance.lang = lang;
-  const voice = window.speechSynthesis.getVoices().find((v) => v.lang === lang);
+  const utterance = new SpeechSynthesisUtterance(text.replace(/₹/g, ' ₹ '));
+  utterance.lang = locale;
+  const voices = window.speechSynthesis.getVoices();
+  const voice =
+    voices.find((v) => v.lang === locale) ??
+    voices.find((v) => v.lang.startsWith(locale.slice(0, 2)));
   if (voice) utterance.voice = voice;
   utterance.onend = onEnd;
   utterance.onerror = onEnd;
   window.speechSynthesis.speak(utterance);
 }
 
-function MoreMenu({ language, onLanguage, onNewChat, onClose }) {
+function MoreMenu({ strings, language, onLanguage, readAloud, onReadAloud, onNewChat, onClose }) {
   const selectId = useId();
   return (
     <>
       <div className="fixed inset-0 z-10" onClick={onClose} aria-hidden />
       <div className="absolute bottom-full left-0 z-20 mb-2 w-72 rounded-xl bg-white p-1 shadow-lg ring-1 ring-slate-200">
         <div className="px-3 pt-2 pb-3">
-          <p className="text-sm font-semibold text-slate-900">Voice</p>
+          <p className="text-sm font-semibold text-slate-900">{strings.voice}</p>
           <label htmlFor={selectId} className="mt-2 block text-sm text-slate-600">
-            I speak
+            {strings.iSpeak}
           </label>
           <Select
             id={selectId}
@@ -85,10 +94,12 @@ function MoreMenu({ language, onLanguage, onNewChat, onClose }) {
               </option>
             ))}
           </Select>
-          <p className="mt-1.5 text-xs text-slate-500">
-            Speak in {VOICE_LANGUAGES.find((l) => l.code === language)?.hint}. Answers are shown in
-            English.
-          </p>
+          <p className="mt-1.5 text-xs text-slate-500">{strings.languageHint}</p>
+          {speechSynthesisAvailable && (
+            <div className="mt-3">
+              <Switch label={strings.readAloud} checked={readAloud} onChange={onReadAloud} />
+            </div>
+          )}
         </div>
         <div className="my-1 border-t border-slate-100" />
         <button
@@ -96,7 +107,7 @@ function MoreMenu({ language, onLanguage, onNewChat, onClose }) {
           onClick={onNewChat}
           className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-slate-100"
         >
-          <SquarePen className="size-4" aria-hidden /> New chat
+          <SquarePen className="size-4" aria-hidden /> {strings.newChat}
         </button>
       </div>
     </>
@@ -124,41 +135,84 @@ function IconButton({ label, onClick, active, className, children, ...props }) {
 
 /**
  * "Ask Stock" assistant: a side panel (full screen on phones) for questions about stock,
- * prices, reorders, slow-moving parts, customers and today's figures. Read-only — answers
- * come from the server's built-in question rules; nothing is changed from here.
+ * prices, reorders, sales, slow-moving parts, customers, branches and today's figures, typed
+ * or spoken in English, Hindi or Telugu. Read-only — answers come from the server's built-in
+ * question rules and fixed queries; nothing is changed from here.
  */
 export function AskStockPanel({ onClose }) {
-  const { user, branch, can, canAny } = useAuth();
+  const { user, branch, can } = useAuth();
   const { messages, pending, ask, reset } = useAskStock(user.id);
   const [input, setInput] = useState('');
   const [expanded, setExpanded] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [language, setLanguage] = useState(readVoiceLanguage);
   const [voiceMode, setVoiceMode] = useState(false);
+  const [speaking, setSpeaking] = useState(false);
+  const [readAloud, setReadAloud] = useState(readReadAloud);
+  // Language picked in this panel; until then the one saved for the user (server), else
+  // the one last used on this device.
+  const [chosenLanguage, setChosenLanguage] = useState(null);
+  const preferences = useQuery({
+    queryKey: ['ask-stock', 'preferences'],
+    queryFn: askStockService.preferences,
+    staleTime: Infinity,
+  });
+  const language =
+    chosenLanguage ?? languageCode(preferences.data?.language) ?? readVoiceLanguage();
+  const lang = shortLanguage(language);
+  const strings = askStockStrings(lang);
+
+  const starters = useQuery({
+    queryKey: ['ask-stock', 'suggestions', lang],
+    queryFn: () => askStockService.suggestions(lang),
+    staleTime: Infinity,
+    placeholderData: keepPreviousData,
+  });
+
   const inputRef = useRef(null);
   const endRef = useRef(null);
-  const voiceModeRef = useRef(false);
   const speechRef = useRef(null);
+  // Latest values for callbacks that outlive a render (speech results, end of read-aloud).
+  const live = useRef({ voiceMode: false, readAloud, language, lang });
+  useEffect(() => {
+    Object.assign(live.current, { readAloud, language, lang });
+    // Voice search on the stock screens follows the same language.
+    saveVoiceLanguage(language);
+  }, [readAloud, language, lang]);
+
+  const stopSpeaking = useCallback(() => {
+    if (speechSynthesisAvailable) window.speechSynthesis.cancel();
+    setSpeaking(false);
+  }, []);
 
   const send = useCallback(
     async (message, options) => {
-      const reply = await ask(message, options);
-      if (reply && voiceModeRef.current) {
-        // Voice mode: read the answer, then listen for the next question.
-        speak(reply.text, () => voiceModeRef.current && speechRef.current.start());
+      stopSpeaking();
+      const reply = await ask(message, { ...options, language: live.current.lang });
+      if (!reply) return;
+      const { voiceMode: handsFree, readAloud: aloud, language: locale } = live.current;
+      const listenAgain = () => {
+        setSpeaking(false);
+        if (live.current.voiceMode) speechRef.current.start();
+      };
+      if ((handsFree || aloud) && !reply.error) {
+        setSpeaking(true);
+        speak(reply.text, locale, listenAgain);
+      } else if (handsFree) {
+        listenAgain();
       }
     },
-    [ask],
+    [ask, stopSpeaking],
   );
 
   const speech = useSpeechRecognition({
     lang: language,
     // A speech error (blocked mic, silence) ends voice mode.
-    onError: () => voiceModeRef.current && setVoice(false),
+    onError: () => live.current.voiceMode && setVoice(false),
     onResult: (text) => {
-      if (voiceModeRef.current) {
+      if (live.current.voiceMode) {
         send(text);
       } else {
+        // Dictation: the words go in the box so they can be corrected before sending.
         setInput((current) => (current ? `${current} ${text}` : text));
         inputRef.current?.focus();
       }
@@ -168,22 +222,26 @@ export function AskStockPanel({ onClose }) {
     speechRef.current = speech;
   });
 
-  const setVoice = useCallback((on) => {
-    voiceModeRef.current = on;
-    setVoiceMode(on);
-    if (on) {
-      speechRef.current.start();
-    } else {
-      speechRef.current.stop();
-      if (speechSynthesisAvailable) window.speechSynthesis.cancel();
-    }
-  }, []);
+  const setVoice = useCallback(
+    (on) => {
+      live.current.voiceMode = on;
+      setVoiceMode(on);
+      if (on) {
+        speechRef.current.start();
+      } else {
+        speechRef.current.stop();
+        stopSpeaking();
+      }
+    },
+    [stopSpeaking],
+  );
 
   // Closing the panel stops reading answers aloud (the recogniser stops by itself).
   useEffect(() => {
     inputRef.current?.focus();
+    const state = live.current;
     return () => {
-      voiceModeRef.current = false;
+      state.voiceMode = false;
       if (speechSynthesisAvailable) window.speechSynthesis.cancel();
     };
   }, []);
@@ -217,8 +275,21 @@ export function AskStockPanel({ onClose }) {
   };
 
   const changeLanguage = (code) => {
-    setLanguage(code);
-    saveVoiceLanguage(code);
+    setChosenLanguage(code);
+    // Listening continues in the old language until restarted; stop to avoid confusion.
+    if (speech.listening) speech.stop();
+    // Saved for the user so it follows them to other devices; failing to save is harmless.
+    askStockService.savePreferences({ language: shortLanguage(code) }).catch(() => {});
+  };
+
+  const changeReadAloud = (on) => {
+    setReadAloud(on);
+    if (!on) stopSpeaking();
+    try {
+      localStorage.setItem(READ_ALOUD_KEY, on ? '1' : '0');
+    } catch {
+      // The choice then lasts for this visit only.
+    }
   };
 
   const toggleMic = () => {
@@ -226,10 +297,9 @@ export function AskStockPanel({ onClose }) {
     else speech.start();
   };
 
-  const suggestions = suggestedQuestions(can, canAny);
+  const dictating = speech.listening && !voiceMode;
   const lastMessage = messages[messages.length - 1];
   const followUps = !pending && lastMessage?.role === 'assistant' ? lastMessage.suggestions : null;
-  const micBlocked = MIC_BLOCKED.includes(speech.errorCode);
   const firstName = user.name.split(/\s+/)[0];
   const closeOnPhone = () => {
     if (!window.matchMedia('(min-width: 640px)').matches) onClose();
@@ -252,20 +322,20 @@ export function AskStockPanel({ onClose }) {
         <div className="min-w-0 flex-1">
           <h2 className="text-sm leading-tight font-semibold text-slate-900">Ask Stock</h2>
           <p className="truncate text-xs text-slate-500">
-            {messages.length ? branch?.name : 'New chat'}
+            {messages.length ? branch?.name : strings.newChat}
           </p>
         </div>
-        <IconButton label="New chat" onClick={newChat}>
+        <IconButton label={strings.newChat} onClick={newChat}>
           <SquarePen className="size-[18px]" />
         </IconButton>
         <IconButton
-          label={expanded ? 'Narrow panel' : 'Expand panel'}
+          label={expanded ? strings.narrow : strings.expand}
           onClick={() => setExpanded((v) => !v)}
           className="hidden sm:flex"
         >
           {expanded ? <Minimize2 className="size-[18px]" /> : <Maximize2 className="size-[18px]" />}
         </IconButton>
-        <IconButton label="Close" onClick={onClose}>
+        <IconButton label={strings.close} onClick={onClose}>
           <X className="size-5" />
         </IconButton>
       </header>
@@ -273,13 +343,13 @@ export function AskStockPanel({ onClose }) {
       <div className="flex-1 overflow-y-auto px-4 py-4" aria-live="polite">
         <div className={cn('mx-auto', expanded && 'max-w-3xl')}>
           {messages.length === 0 ? (
-            <div className="pt-6">
+            <div className="pt-6" lang={language}>
               <p className="text-2xl font-semibold text-slate-900">
-                {greeting()}, {firstName}
+                {strings[greetingKey()]}, {firstName}
               </p>
-              <p className="mt-1 text-slate-500">Ask about stock, reorders or customers.</p>
+              <p className="mt-1 text-slate-500">{strings.subtitle}</p>
               <div className="mt-6 space-y-2">
-                {suggestions.map((q) => (
+                {(starters.data ?? []).map((q) => (
                   <button
                     key={q}
                     type="button"
@@ -301,7 +371,7 @@ export function AskStockPanel({ onClose }) {
                     </p>
                   </li>
                 ) : (
-                  <li key={m.id}>
+                  <li key={m.id} lang={m.language}>
                     <p
                       className={cn(
                         'text-sm whitespace-pre-wrap',
@@ -312,6 +382,7 @@ export function AskStockPanel({ onClose }) {
                     </p>
                     <AskStockCards
                       cards={m.cards}
+                      strings={askStockStrings(m.language)}
                       onAsk={send}
                       canOpenProducts={can(P.PRODUCTS_VIEW)}
                       onNavigate={closeOnPhone}
@@ -320,14 +391,17 @@ export function AskStockPanel({ onClose }) {
                 ),
               )}
               {pending && (
-                <li className="flex gap-1 py-2" aria-label="Answering">
-                  {[0, 150, 300].map((delay) => (
-                    <span
-                      key={delay}
-                      className="size-2 animate-bounce rounded-full bg-slate-400"
-                      style={{ animationDelay: `${delay}ms` }}
-                    />
-                  ))}
+                <li className="flex items-center gap-2 py-2 text-xs text-slate-500">
+                  <span className="flex gap-1" aria-hidden>
+                    {[0, 150, 300].map((delay) => (
+                      <span
+                        key={delay}
+                        className="size-2 animate-bounce rounded-full bg-slate-400"
+                        style={{ animationDelay: `${delay}ms` }}
+                      />
+                    ))}
+                  </span>
+                  {strings.answering}
                 </li>
               )}
             </ol>
@@ -339,7 +413,7 @@ export function AskStockPanel({ onClose }) {
                   key={q}
                   type="button"
                   onClick={() => send(q)}
-                  className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                  className="rounded-full border border-slate-200 px-3 py-1.5 text-left text-xs font-medium text-slate-700 hover:bg-slate-50"
                 >
                   {q}
                 </button>
@@ -353,16 +427,26 @@ export function AskStockPanel({ onClose }) {
       <div className={cn('shrink-0 px-3 pb-3', expanded && 'sm:mx-auto sm:w-full sm:max-w-3xl')}>
         {speech.error && (
           <p role="alert" className="mb-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-            {micBlocked
-              ? 'The microphone is blocked. Allow it in the browser’s site settings, or type below.'
-              : speech.error}
+            {speechErrorText(strings, speech.errorCode)}
           </p>
+        )}
+        {!speech.supported && (
+          <p className="mb-2 px-1 text-xs text-slate-500">{strings.micUnsupported}</p>
+        )}
+        {speaking && (
+          <button
+            type="button"
+            onClick={stopSpeaking}
+            className="mb-2 flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-200"
+          >
+            <VolumeX className="size-4" aria-hidden /> {strings.stopSpeaking}
+          </button>
         )}
         <div className="rounded-2xl border border-slate-300 bg-white focus-within:border-slate-400 focus-within:ring-2 focus-within:ring-slate-200">
           <textarea
             ref={inputRef}
             rows={1}
-            value={speech.listening && !voiceMode && speech.interim ? speech.interim : input}
+            value={dictating && speech.interim ? speech.interim : input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
@@ -371,15 +455,20 @@ export function AskStockPanel({ onClose }) {
               }
             }}
             placeholder={
-              voiceMode ? (speech.listening ? 'Listening…' : 'Voice mode on') : 'Ask about stock…'
+              speech.listening
+                ? strings.listening
+                : voiceMode
+                  ? strings.voiceModeOn
+                  : strings.placeholder
             }
             maxLength={300}
-            aria-label="Ask about stock"
+            lang={language}
+            aria-label={strings.placeholder}
             className="block field-sizing-content max-h-32 min-h-11 w-full resize-none bg-transparent px-4 pt-3 text-base outline-none placeholder:text-slate-400 sm:text-sm"
           />
           <div className="relative flex items-center gap-1 px-2 pb-2">
             <IconButton
-              label="More options"
+              label={strings.moreOptions}
               onClick={() => setMenuOpen((v) => !v)}
               aria-expanded={menuOpen}
             >
@@ -387,8 +476,11 @@ export function AskStockPanel({ onClose }) {
             </IconButton>
             {menuOpen && (
               <MoreMenu
+                strings={strings}
                 language={language}
                 onLanguage={changeLanguage}
+                readAloud={readAloud}
+                onReadAloud={changeReadAloud}
                 onNewChat={newChat}
                 onClose={() => setMenuOpen(false)}
               />
@@ -397,18 +489,16 @@ export function AskStockPanel({ onClose }) {
             {speech.supported && (
               <>
                 <IconButton
-                  label={speech.listening && !voiceMode ? 'Stop dictation' : 'Dictate'}
+                  label={dictating ? strings.stopDictation : strings.dictate}
                   onClick={toggleMic}
-                  active={speech.listening && !voiceMode}
+                  active={dictating}
                   disabled={voiceMode}
                   className="disabled:opacity-40"
                 >
-                  <Mic
-                    className={cn('size-5', speech.listening && !voiceMode && 'animate-pulse')}
-                  />
+                  <Mic className={cn('size-5', dictating && 'animate-pulse')} />
                 </IconButton>
                 <IconButton
-                  label={voiceMode ? 'Turn voice mode off' : 'Voice mode: speak and hear answers'}
+                  label={voiceMode ? strings.voiceModeOff : strings.voiceMode}
                   onClick={() => setVoice(!voiceMode)}
                   active={voiceMode}
                   aria-pressed={voiceMode}
@@ -423,16 +513,14 @@ export function AskStockPanel({ onClose }) {
               type="button"
               onClick={submit}
               disabled={!input.trim() || pending}
-              aria-label="Send"
+              aria-label={strings.send}
               className="flex size-10 items-center justify-center rounded-full bg-slate-900 text-white transition hover:bg-slate-800 disabled:bg-slate-200 disabled:text-slate-400"
             >
               <SendHorizontal className="size-[18px]" />
             </button>
           </div>
         </div>
-        <p className="mt-1.5 text-center text-[11px] text-slate-400">
-          Answers come from live stock data. Ask Stock never changes stock.
-        </p>
+        <p className="mt-1.5 text-center text-[11px] text-slate-400">{strings.footer}</p>
       </div>
     </section>,
     document.body,

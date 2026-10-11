@@ -1,0 +1,141 @@
+/**
+ * Text of the Ask Stock panel in each language (answers themselves come from the server).
+ * Keys must exist in every language; add a language here and in constants/voice.js.
+ */
+const en = {
+  morning: 'Good morning',
+  afternoon: 'Good afternoon',
+  evening: 'Good evening',
+  subtitle: 'Ask about stock, reorders or customers.',
+  placeholder: 'Ask about stock…',
+  listening: 'Listening…',
+  voiceModeOn: 'Voice mode on',
+  newChat: 'New chat',
+  expand: 'Expand panel',
+  narrow: 'Narrow panel',
+  close: 'Close',
+  moreOptions: 'More options',
+  dictate: 'Speak your question',
+  stopDictation: 'Stop listening',
+  voiceMode: 'Voice mode: speak and hear answers',
+  voiceModeOff: 'Turn voice mode off',
+  send: 'Send',
+  stopSpeaking: 'Stop speaking',
+  answering: 'Looking up the stock…',
+  voice: 'Voice',
+  iSpeak: 'I speak',
+  languageHint: 'Questions are heard and answered in this language.',
+  readAloud: 'Read answers aloud',
+  footer: 'Answers come from live stock data. Ask Stock never changes stock.',
+  micBlocked: 'The microphone is blocked. Allow it in the browser’s site settings, or type below.',
+  micUnsupported: 'Voice input is not supported in this browser. Type your question instead.',
+  noSpeech: 'Didn’t catch that. Tap the mic and try again.',
+  noMicrophone: 'No microphone found. Type your question instead.',
+  voiceOffline: 'Voice input needs an internet connection.',
+  voiceFailed: 'Voice input failed. Try again or type your question.',
+  thisBranch: '(this branch)',
+  price: 'Price',
+  mrp: 'MRP',
+  minLevel: 'Min level',
+  purchase: 'Purchase',
+  openProduct: 'Open product',
+  outOfStock: 'Out of stock',
+  lowStock: 'Low stock',
+};
+
+const hi = {
+  morning: 'सुप्रभात',
+  afternoon: 'नमस्ते',
+  evening: 'शुभ संध्या',
+  subtitle: 'स्टॉक, दोबारा ऑर्डर या ग्राहकों के बारे में पूछें।',
+  placeholder: 'स्टॉक के बारे में पूछें…',
+  listening: 'सुन रहा हूँ…',
+  voiceModeOn: 'वॉइस मोड चालू है',
+  newChat: 'नई चैट',
+  expand: 'पैनल बड़ा करें',
+  narrow: 'पैनल छोटा करें',
+  close: 'बंद करें',
+  moreOptions: 'और विकल्प',
+  dictate: 'अपना सवाल बोलें',
+  stopDictation: 'सुनना बंद करें',
+  voiceMode: 'वॉइस मोड: बोलें और जवाब सुनें',
+  voiceModeOff: 'वॉइस मोड बंद करें',
+  send: 'भेजें',
+  stopSpeaking: 'बोलना बंद करें',
+  answering: 'स्टॉक देख रहा हूँ…',
+  voice: 'आवाज़',
+  iSpeak: 'मैं बोलता/बोलती हूँ',
+  languageHint: 'सवाल इसी भाषा में सुने जाएंगे और जवाब भी इसी में मिलेंगे।',
+  readAloud: 'जवाब बोलकर सुनाएं',
+  footer: 'जवाब लाइव स्टॉक डेटा से आते हैं। Ask Stock कभी स्टॉक नहीं बदलता।',
+  micBlocked: 'माइक्रोफ़ोन ब्लॉक है। ब्राउज़र की साइट सेटिंग में अनुमति दें, या नीचे टाइप करें।',
+  micUnsupported: 'इस ब्राउज़र में बोलकर पूछना उपलब्ध नहीं है। अपना सवाल टाइप करें।',
+  noSpeech: 'सुनाई नहीं दिया। माइक दबाकर फिर से बोलें।',
+  noMicrophone: 'माइक्रोफ़ोन नहीं मिला। अपना सवाल टाइप करें।',
+  voiceOffline: 'बोलकर पूछने के लिए इंटरनेट चाहिए।',
+  voiceFailed: 'आवाज़ नहीं समझ पाया। फिर कोशिश करें या टाइप करें।',
+  thisBranch: '(यह ब्रांच)',
+  price: 'दाम',
+  mrp: 'MRP',
+  minLevel: 'न्यूनतम स्तर',
+  purchase: 'खरीद',
+  openProduct: 'प्रोडक्ट खोलें',
+  outOfStock: 'स्टॉक खत्म',
+  lowStock: 'कम स्टॉक',
+};
+
+const te = {
+  morning: 'శుభోదయం',
+  afternoon: 'నమస్కారం',
+  evening: 'శుభ సాయంత్రం',
+  subtitle: 'స్టాక్, రీఆర్డర్ లేదా కస్టమర్ల గురించి అడగండి.',
+  placeholder: 'స్టాక్ గురించి అడగండి…',
+  listening: 'వింటున్నాను…',
+  voiceModeOn: 'వాయిస్ మోడ్ ఆన్‌లో ఉంది',
+  newChat: 'కొత్త చాట్',
+  expand: 'ప్యానెల్ పెద్దది చేయండి',
+  narrow: 'ప్యానెల్ చిన్నది చేయండి',
+  close: 'మూసివేయండి',
+  moreOptions: 'మరిన్ని ఎంపికలు',
+  dictate: 'మీ ప్రశ్న చెప్పండి',
+  stopDictation: 'వినడం ఆపండి',
+  voiceMode: 'వాయిస్ మోడ్: మాట్లాడండి, సమాధానం వినండి',
+  voiceModeOff: 'వాయిస్ మోడ్ ఆపండి',
+  send: 'పంపండి',
+  stopSpeaking: 'చదవడం ఆపండి',
+  answering: 'స్టాక్ చూస్తున్నాను…',
+  voice: 'వాయిస్',
+  iSpeak: 'నేను మాట్లాడే భాష',
+  languageHint: 'ప్రశ్నలు ఈ భాషలో వింటాను, సమాధానాలు కూడా ఇదే భాషలో వస్తాయి.',
+  readAloud: 'సమాధానాలు చదివి వినిపించు',
+  footer: 'సమాధానాలు లైవ్ స్టాక్ డేటా నుండి వస్తాయి. Ask Stock ఎప్పుడూ స్టాక్‌ను మార్చదు.',
+  micBlocked:
+    'మైక్రోఫోన్ బ్లాక్ అయింది. బ్రౌజర్ సైట్ సెట్టింగ్స్‌లో అనుమతించండి, లేదా కింద టైప్ చేయండి.',
+  micUnsupported: 'ఈ బ్రౌజర్‌లో వాయిస్ ఇన్‌పుట్ లేదు. మీ ప్రశ్నను టైప్ చేయండి.',
+  noSpeech: 'వినిపించలేదు. మైక్ నొక్కి మళ్లీ చెప్పండి.',
+  noMicrophone: 'మైక్రోఫోన్ దొరకలేదు. మీ ప్రశ్నను టైప్ చేయండి.',
+  voiceOffline: 'వాయిస్ ఇన్‌పుట్‌కు ఇంటర్నెట్ అవసరం.',
+  voiceFailed: 'వాయిస్ అర్థం కాలేదు. మళ్లీ ప్రయత్నించండి లేదా టైప్ చేయండి.',
+  thisBranch: '(ఈ బ్రాంచ్)',
+  price: 'ధర',
+  mrp: 'MRP',
+  minLevel: 'కనీస స్థాయి',
+  purchase: 'కొనుగోలు',
+  openProduct: 'ప్రొడక్ట్ తెరవండి',
+  outOfStock: 'స్టాక్ అయిపోయింది',
+  lowStock: 'తక్కువ స్టాక్',
+};
+
+export const ASK_STOCK_STRINGS = { en, hi, te };
+
+/** Panel text for a short language code ('en', 'hi', 'te'); English if unknown. */
+export const askStockStrings = (language) => ASK_STOCK_STRINGS[language] ?? en;
+
+/** Speech recognition error code → the message to show in this language. */
+export function speechErrorText(strings, code) {
+  if (code === 'not-allowed' || code === 'service-not-allowed') return strings.micBlocked;
+  if (code === 'no-speech') return strings.noSpeech;
+  if (code === 'audio-capture') return strings.noMicrophone;
+  if (code === 'network') return strings.voiceOffline;
+  return strings.voiceFailed;
+}
