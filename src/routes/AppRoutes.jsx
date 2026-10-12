@@ -41,6 +41,10 @@ const ProductDetailPage = page(
   () => import('../pages/products/ProductDetailPage'),
   'ProductDetailPage',
 );
+const ProductImportPage = page(
+  () => import('../pages/products/ProductImportPage'),
+  'ProductImportPage',
+);
 const ProductFormPage = page(() => import('../pages/products/ProductFormPage'), 'ProductFormPage');
 const CustomerListPage = page(
   () => import('../pages/customers/CustomerListPage'),
@@ -149,6 +153,10 @@ export const router = createBrowserRouter([
                   {
                     path: 'products/new',
                     element: branchGuard([P.PRODUCTS_CREATE], <ProductFormPage />),
+                  },
+                  {
+                    path: 'products/import',
+                    element: branchGuard([P.PRODUCTS_CREATE], <ProductImportPage />),
                   },
                   {
                     path: 'products/:id',

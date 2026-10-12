@@ -1,4 +1,4 @@
-import { Package, Plus } from 'lucide-react';
+import { FileSpreadsheet, Package, Plus } from 'lucide-react';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
 import { Card } from '../../components/common/Card';
@@ -68,10 +68,16 @@ export function ProductListPage() {
         title="Products"
         actions={
           can(P.PRODUCTS_CREATE) && (
-            <Button to="/products/new">
-              <Plus className="size-5" aria-hidden />
-              New product
-            </Button>
+            <>
+              <Button to="/products/import" variant="secondary">
+                <FileSpreadsheet className="size-5" aria-hidden />
+                Import Excel
+              </Button>
+              <Button to="/products/new">
+                <Plus className="size-5" aria-hidden />
+                New product
+              </Button>
+            </>
           )
         }
       />

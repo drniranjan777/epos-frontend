@@ -7,4 +7,7 @@ export const productService = {
   create: (data) => request(api.post('/products', data)),
   update: (id, data) => request(api.patch(`/products/${id}`, data)),
   remove: (id) => request(api.delete(`/products/${id}`)),
+  /** Rows of the Excel template; `dryRun` only checks them. Large files take a while to save. */
+  importFromExcel: (rows, dryRun) =>
+    request(api.post('/products/import', { rows, dryRun }, { timeout: 10 * 60_000 })),
 };
