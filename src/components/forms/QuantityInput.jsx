@@ -59,7 +59,7 @@ export function QuantityInput({
             className="tabular h-14 w-full border-0 bg-white text-center text-2xl font-bold text-slate-900 focus:outline-none"
           />
           {unit && (
-            <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm font-medium text-slate-400">
+            <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm font-medium text-slate-500">
               {unit}
             </span>
           )}

@@ -51,5 +51,4 @@ export const queryKeys = {
     valuation: (params) => ['reports', 'valuation', params],
     movement: (params) => ['reports', 'movement', params],
   },
-  audit: { list: (params) => ['audit', params] },
 };

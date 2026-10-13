@@ -118,7 +118,7 @@ export function InvoicePrintView({ invoice }) {
               {Number(item.discountPercent) > 0 && ` − ${formatNumber(item.discountPercent)}%`} ·
               GST {formatNumber(item.gstRate)}%
             </p>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-500">
               {[item.sku, item.hsnCode && `HSN ${item.hsnCode}`].filter(Boolean).join(' · ')}
             </p>
           </li>

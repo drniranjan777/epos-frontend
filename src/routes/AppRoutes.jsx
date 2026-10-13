@@ -68,7 +68,6 @@ const CompanySettingsPage = page(
   () => import('../pages/settings/CompanySettingsPage'),
   'CompanySettingsPage',
 );
-const AuditLogPage = page(() => import('../pages/audit/AuditLogPage'), 'AuditLogPage');
 const AccountPage = page(() => import('../pages/auth/AccountPage'), 'AccountPage');
 
 /** Wraps a page element with a permission check. */
@@ -202,7 +201,6 @@ export const router = createBrowserRouter([
                     path: 'settings/company',
                     element: guard([P.SETTINGS_MANAGE], <CompanySettingsPage />),
                   },
-                  { path: 'audit', element: guard([P.AUDIT_VIEW], <AuditLogPage />) },
                   { path: 'account', element: <AccountPage /> },
                   { path: '*', element: <NotFoundPage /> },
                 ],

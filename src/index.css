@@ -1,9 +1,18 @@
 @import 'tailwindcss';
+@import '@fontsource-variable/quicksand';
 
 @theme {
+  /* Quicksand is bundled with the app (no external font request); Hindi and Telugu text falls
+     back to the device's own fonts. */
   --font-sans:
-    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
-    'Noto Sans', sans-serif;
+    'Quicksand Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+
+  /* Darker greys for secondary text, so labels and hints stay easy to read: each text grey
+     takes the value of the next darker Tailwind step. */
+  --color-slate-500: #475569;
+  --color-slate-600: #334155;
+  --color-slate-700: #1e293b;
 
   /* Brand accent: the orange of the company logo (500). Used sparingly for primary actions
      and highlights. */
@@ -30,7 +39,7 @@
   }
 
   body {
-    @apply bg-slate-100 font-sans text-slate-900 antialiased;
+    @apply bg-slate-100 font-sans font-medium text-slate-950 antialiased;
     overscroll-behavior-y: none;
   }
 

@@ -18,12 +18,7 @@ export function AdminLayout() {
 
   return (
     <div className="min-h-dvh">
-      <Sidebar
-        compact={compact}
-        onToggleCompact={() => setCompact((value) => !value)}
-        showAsk={showAsk}
-        onAsk={() => setAskOpen(true)}
-      />
+      <Sidebar compact={compact} onToggleCompact={() => setCompact((value) => !value)} />
       <main
         className={cn(
           'transition-[padding] duration-200 ease-out motion-reduce:transition-none',

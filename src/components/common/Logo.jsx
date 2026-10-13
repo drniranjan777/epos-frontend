@@ -14,7 +14,7 @@ export function Logo({ variant = 'full', className }) {
       width={icon ? 512 : 1328}
       height={icon ? 512 : 690}
       draggable={false}
-      className={cn('w-auto shrink-0 select-none', icon ? 'aspect-square' : 'h-20', className)}
+      className={cn('w-auto shrink-0 select-none', icon ? 'aspect-square' : 'h-14', className)}
     />
   );
 }

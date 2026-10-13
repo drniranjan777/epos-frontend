@@ -9,7 +9,3 @@ export const reportService = {
   stockValuation: (params) => request(api.get('/reports/stock-valuation', { params })),
   movement: (params) => request(api.get('/reports/movement', { params })),
 };
-
-export const auditService = {
-  list: (params) => request(api.get('/audit-logs', { params })),
-};

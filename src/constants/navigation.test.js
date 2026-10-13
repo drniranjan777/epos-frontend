@@ -88,7 +88,6 @@ describe('navigation structure', () => {
         '/users',
         '/settings/branches',
         '/settings/company',
-        '/audit',
       ].sort(),
     );
     expect(items.every((i) => i.anyOf.length > 0 && i.icon && i.label)).toBe(true);

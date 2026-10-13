@@ -51,7 +51,7 @@ export function CustomerPicker({ value, onChange, label = 'Customer', error, opt
     <div>
       <p className="mb-1.5 text-sm font-medium text-slate-700">
         {label}
-        {optional && <span className="ml-1 font-normal text-slate-400">(optional)</span>}
+        {optional && <span className="ml-1 font-normal text-slate-500">(optional)</span>}
       </p>
       <SearchInput
         value={search}

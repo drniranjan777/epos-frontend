@@ -520,7 +520,7 @@ export function AskStockPanel({ onClose }) {
             </button>
           </div>
         </div>
-        <p className="mt-1.5 text-center text-[11px] text-slate-400">{strings.footer}</p>
+        <p className="mt-1.5 text-center text-[11px] text-slate-500">{strings.footer}</p>
       </div>
     </section>,
     document.body,

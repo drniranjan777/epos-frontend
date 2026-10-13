@@ -1,6 +1,6 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../constants/queryKeys';
-import { auditService, dashboardService, reportService } from '../services/reportService';
+import { dashboardService, reportService } from '../services/reportService';
 import { settingsService } from '../services/settingsService';
 import { roleService, userService } from '../services/userService';
 
@@ -82,7 +82,7 @@ export const useUpdateSettings = () => useSettingsMutation(settingsService.updat
 export const useUploadLogo = () => useSettingsMutation(settingsService.uploadLogo);
 export const useRemoveLogo = () => useSettingsMutation(settingsService.removeLogo);
 
-// ---- Dashboard, reports, audit ----
+// ---- Dashboard, reports ----
 export function useDashboardSummary() {
   return useQuery({
     queryKey: queryKeys.dashboard.summary,
@@ -112,14 +112,6 @@ export function useMovementReport(params) {
     queryKey: queryKeys.reports.movement(params),
     queryFn: () => reportService.movement(params),
     enabled: Boolean(params.from && params.to),
-    placeholderData: keepPreviousData,
-  });
-}
-
-export function useAuditLogs(params) {
-  return useQuery({
-    queryKey: queryKeys.audit.list(params),
-    queryFn: () => auditService.list(params),
     placeholderData: keepPreviousData,
   });
 }

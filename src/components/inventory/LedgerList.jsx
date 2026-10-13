@@ -88,7 +88,7 @@ export function LedgerList({ items, showProduct = false }) {
               </span>
             </span>
           </div>
-          {describe(t) && <p className="mt-0.5 text-xs text-slate-400">by {t.userName}</p>}
+          {describe(t) && <p className="mt-0.5 text-xs text-slate-500">by {t.userName}</p>}
         </div>
       )}
     />

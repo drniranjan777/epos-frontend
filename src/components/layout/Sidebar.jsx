@@ -1,4 +1,4 @@
-import { Building2, ChevronsLeft, ChevronsRight, Sparkles } from 'lucide-react';
+import { Building2, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { Link } from 'react-router';
 import { visibleSections } from '../../constants/navigation';
@@ -40,10 +40,10 @@ function useRailTooltip(enabled) {
 }
 
 /**
- * Desktop sidebar: logo, branch, Ask Stock, grouped navigation and the signed-in user.
+ * Desktop sidebar: logo, branch, grouped navigation and the signed-in user.
  * `compact` narrows it to an icon rail with tooltips.
  */
-export function Sidebar({ compact, onToggleCompact, showAsk, onAsk }) {
+export function Sidebar({ compact, onToggleCompact }) {
   const { branch, canAny } = useAuth();
   const { tip, tooltip, hide } = useRailTooltip(compact);
   const railButton =
@@ -59,11 +59,11 @@ export function Sidebar({ compact, onToggleCompact, showAsk, onAsk }) {
       <div
         className={cn(
           'flex shrink-0 items-center',
-          compact ? 'h-16 justify-center' : 'px-5 pt-5 pb-4',
+          compact ? 'h-16 justify-center' : 'px-5 pt-4 pb-3',
         )}
       >
         <Link to="/" className="rounded-lg" aria-label="Go to dashboard" {...tip?.('Dashboard')}>
-          <Logo variant={compact ? 'icon' : 'full'} className={compact ? 'h-10' : 'h-[76px]'} />
+          <Logo variant={compact ? 'icon' : 'full'} className={compact ? 'h-9' : 'h-14'} />
         </Link>
       </div>
 
@@ -85,52 +85,30 @@ export function Sidebar({ compact, onToggleCompact, showAsk, onAsk }) {
         )}
       </button>
 
-      {(branch || showAsk) && (
+      {branch && (
         <div
           className={cn(
             'shrink-0 border-y border-slate-200',
             compact ? 'flex flex-col items-center gap-1 py-2' : 'space-y-2 px-4 py-3',
           )}
         >
-          {branch &&
-            (compact ? (
-              // The rail has no room for the picker: opening the sidebar reveals it.
-              <button
-                type="button"
-                className={railButton}
-                onClick={() => {
-                  hide();
-                  onToggleCompact();
-                }}
-                aria-label={`Branch: ${branch.name}. Expand sidebar to change`}
-                {...tip(`Branch: ${branch.name}`)}
-              >
-                <Building2 className="size-[18px]" aria-hidden />
-              </button>
-            ) : (
-              <BranchSelect className="flex w-full [&_select]:w-full [&>span:last-child]:flex-1" />
-            ))}
-          {showAsk &&
-            (compact ? (
-              <button
-                type="button"
-                className={railButton}
-                onClick={onAsk}
-                aria-label="Ask Stock"
-                {...tip('Ask Stock')}
-              >
-                <Sparkles className="text-brand-500 size-[18px]" aria-hidden />
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={onAsk}
-                className="flex h-10 w-full items-center gap-2.5 rounded-lg bg-white px-3 text-sm font-medium text-slate-800 ring-1 ring-slate-200 transition-colors ring-inset hover:bg-slate-50 hover:ring-slate-300"
-              >
-                <Sparkles className="text-brand-500 size-[18px]" aria-hidden />
-                Ask Stock
-              </button>
-            ))}
+          {compact ? (
+            // The rail has no room for the picker: opening the sidebar reveals it.
+            <button
+              type="button"
+              className={railButton}
+              onClick={() => {
+                hide();
+                onToggleCompact();
+              }}
+              aria-label={`Branch: ${branch.name}. Expand sidebar to change`}
+              {...tip(`Branch: ${branch.name}`)}
+            >
+              <Building2 className="size-[18px]" aria-hidden />
+            </button>
+          ) : (
+            <BranchSelect className="flex w-full [&_select]:w-full [&>span:last-child]:flex-1" />
+          )}
         </div>
       )}
 

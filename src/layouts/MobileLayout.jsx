@@ -131,7 +131,7 @@ export function MobileLayout() {
           <div className="absolute inset-0 bg-slate-950/50" onClick={() => setDrawerOpen(false)} />
           <div className="pt-safe pb-safe absolute inset-y-0 left-0 flex w-[85%] max-w-xs flex-col bg-white shadow-xl">
             <div className="flex items-center justify-between border-b border-slate-200 py-3 pr-4 pl-5">
-              <Logo className="h-14" />
+              <Logo className="h-11" />
               <button
                 type="button"
                 onClick={() => setDrawerOpen(false)}

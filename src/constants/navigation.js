@@ -12,7 +12,6 @@ import {
   ListTree,
   Package,
   Percent,
-  ScrollText,
   ShieldCheck,
   Store,
   Users,
@@ -148,7 +147,6 @@ export const NAV_SECTIONS = [
         icon: Building2,
         anyOf: [P.SETTINGS_MANAGE],
       },
-      { to: '/audit', label: 'Audit Logs', icon: ScrollText, anyOf: [P.AUDIT_VIEW] },
     ],
   },
 ];

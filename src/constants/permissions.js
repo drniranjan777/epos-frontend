@@ -26,5 +26,4 @@ export const PERMISSIONS = Object.freeze({
   USERS_MANAGE: 'users.manage',
   ROLES_MANAGE: 'roles.manage',
   SETTINGS_MANAGE: 'settings.manage',
-  AUDIT_VIEW: 'audit.view',
 });
