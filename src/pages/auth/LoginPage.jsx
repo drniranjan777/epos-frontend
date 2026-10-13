@@ -6,6 +6,7 @@ import { useLocation, useNavigate } from 'react-router';
 import { z } from 'zod';
 import { Button } from '../../components/common/Button';
 import { TextField } from '../../components/forms/Field';
+import { Logo } from '../../components/common/Logo';
 import { APP_NAME } from '../../constants/app';
 import { useAuth } from '../../hooks/useAuth';
 import { getErrorMessage } from '../../utils/apiError';
@@ -40,8 +41,10 @@ export function LoginPage() {
   return (
     <div className="flex min-h-dvh flex-col bg-slate-900 sm:items-center sm:justify-center sm:p-6">
       <div className="pt-safe flex flex-col items-center px-6 pt-14 pb-10 text-center sm:pt-0">
-        <img src="/icon.svg" alt="" className="size-14" />
-        <h1 className="mt-4 text-2xl font-bold text-white">{APP_NAME}</h1>
+        <div className="rounded-2xl bg-white px-6 py-4 shadow-lg">
+          <Logo className="h-24" />
+        </div>
+        <h1 className="mt-5 text-2xl font-bold text-white">{APP_NAME}</h1>
         <p className="mt-1 text-sm text-slate-400">Sign in to manage stock and invoices</p>
       </div>
 

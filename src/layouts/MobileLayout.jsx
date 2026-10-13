@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { NavLink, Outlet } from 'react-router';
 import { AskStockPanel } from '../components/askStock/AskStockPanel';
 import { ASK_STOCK_PERMISSIONS } from '../components/askStock/askStockAccess';
+import { Logo } from '../components/common/Logo';
 import { BranchSelect } from '../components/layout/BranchSelect';
 import { NavList } from '../components/layout/NavList';
 import { Avatar, UserPanel } from '../components/layout/UserMenu';
@@ -129,8 +130,8 @@ export function MobileLayout() {
         <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label="Menu">
           <div className="absolute inset-0 bg-slate-950/50" onClick={() => setDrawerOpen(false)} />
           <div className="pt-safe pb-safe absolute inset-y-0 left-0 flex w-[85%] max-w-xs flex-col bg-white shadow-xl">
-            <div className="flex h-14 items-center justify-between border-b border-slate-100 px-4">
-              <span className="font-semibold">{APP_NAME}</span>
+            <div className="flex items-center justify-between border-b border-slate-200 py-3 pr-4 pl-5">
+              <Logo className="h-14" />
               <button
                 type="button"
                 onClick={() => setDrawerOpen(false)}
@@ -140,10 +141,14 @@ export function MobileLayout() {
                 <X className="size-5" />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto p-3">
-              <NavList sections={visibleSections(canAny)} onNavigate={() => setDrawerOpen(false)} />
+            <div className="scrollbar-slim flex-1 overflow-y-auto p-3">
+              <NavList
+                sections={visibleSections(canAny)}
+                onNavigate={() => setDrawerOpen(false)}
+                touch
+              />
             </div>
-            <div className="border-t border-slate-100 p-3">
+            <div className="border-t border-slate-200 p-3">
               <UserPanel onNavigate={() => setDrawerOpen(false)} />
             </div>
           </div>

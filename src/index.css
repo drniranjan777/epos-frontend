@@ -5,15 +5,16 @@
     ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
     'Noto Sans', sans-serif;
 
-  /* Brand accent: machinery amber. Used sparingly for primary actions and highlights. */
-  --color-brand-50: #fffbeb;
-  --color-brand-100: #fef3c7;
-  --color-brand-200: #fde68a;
-  --color-brand-300: #fcd34d;
-  --color-brand-400: #fbbf24;
-  --color-brand-500: #f59e0b;
-  --color-brand-600: #d97706;
-  --color-brand-700: #b45309;
+  /* Brand accent: the orange of the company logo (500). Used sparingly for primary actions
+     and highlights. */
+  --color-brand-50: #fef5ef;
+  --color-brand-100: #fde7d9;
+  --color-brand-200: #facbb0;
+  --color-brand-300: #f6a67d;
+  --color-brand-400: #f1804d;
+  --color-brand-500: #eb622a;
+  --color-brand-600: #cf4c18;
+  --color-brand-700: #a93a14;
 
   /* Stock movement semantics, used consistently across the app. */
   --color-stock-in: #047857;
@@ -51,6 +52,12 @@
 
 @utility pt-safe {
   padding-top: env(safe-area-inset-top);
+}
+
+/* Slim, quiet scrollbar for the sidebar's own scrolling. */
+@utility scrollbar-slim {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-slate-300) transparent;
 }
 
 @utility tabular {

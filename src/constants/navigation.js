@@ -20,13 +20,16 @@ import {
 import { PERMISSIONS as P } from './permissions';
 
 /**
- * Navigation items. `anyOf` lists permissions of which the user needs at least one.
- * `mobilePriority` orders items for the bottom bar (lower = earlier); items without it
- * are only reachable from the drawer on phones.
+ * Navigation, grouped the way the sidebar and the phone drawer show it. `anyOf` lists
+ * permissions of which the user needs at least one. `mobilePriority` orders items for the
+ * bottom bar (lower = earlier); items without it are only reachable from the drawer on phones.
+ * `defaultOpen` sections start expanded; the others open when one of their pages is shown.
  */
 export const NAV_SECTIONS = [
   {
-    title: 'Operations',
+    id: 'overview',
+    title: 'Overview',
+    defaultOpen: true,
     items: [
       {
         to: '/',
@@ -37,6 +40,14 @@ export const NAV_SECTIONS = [
         end: true,
         mobilePriority: 1,
       },
+      { to: '/reports', label: 'Reports', icon: BarChart3, anyOf: [P.REPORTS_VIEW] },
+    ],
+  },
+  {
+    id: 'inventory',
+    title: 'Inventory',
+    defaultOpen: true,
+    items: [
       {
         to: '/stock/out',
         label: 'Stock OUT',
@@ -62,25 +73,17 @@ export const NAV_SECTIONS = [
         mobilePriority: 5,
       },
       {
-        to: '/invoices',
-        label: 'Invoices',
-        icon: FileText,
-        anyOf: [P.INVOICE_VIEW],
-        mobilePriority: 4,
-      },
-      {
-        to: '/products',
-        label: 'Products',
-        icon: Package,
-        anyOf: [P.PRODUCTS_VIEW],
-        mobilePriority: 6,
-      },
-      {
         to: '/inventory',
         label: 'Stock Levels',
         icon: Boxes,
         anyOf: [P.INVENTORY_VIEW],
         end: true,
+      },
+      {
+        to: '/stock/entries',
+        label: 'Stock Entries',
+        icon: ClipboardList,
+        anyOf: [P.INVENTORY_VIEW],
       },
       {
         to: '/inventory/ledger',
@@ -90,11 +93,19 @@ export const NAV_SECTIONS = [
         anyOf: [P.INVENTORY_VIEW],
         mobilePriority: 7,
       },
+    ],
+  },
+  {
+    id: 'sales',
+    title: 'Sales & Billing',
+    defaultOpen: true,
+    items: [
       {
-        to: '/stock/entries',
-        label: 'Stock Entries',
-        icon: ClipboardList,
-        anyOf: [P.INVENTORY_VIEW],
+        to: '/invoices',
+        label: 'Invoices',
+        icon: FileText,
+        anyOf: [P.INVOICE_VIEW],
+        mobilePriority: 4,
       },
       {
         to: '/customers',
@@ -102,10 +113,26 @@ export const NAV_SECTIONS = [
         icon: Users,
         anyOf: [P.CUSTOMERS_VIEW, P.CUSTOMERS_MANAGE],
       },
-      { to: '/reports', label: 'Reports', icon: BarChart3, anyOf: [P.REPORTS_VIEW] },
     ],
   },
   {
+    id: 'master-data',
+    title: 'Master Data',
+    defaultOpen: true,
+    items: [
+      {
+        to: '/products',
+        label: 'Products',
+        icon: Package,
+        anyOf: [P.PRODUCTS_VIEW],
+        mobilePriority: 6,
+      },
+      { to: '/settings/masters', label: 'Masters', icon: ListTree, anyOf: [P.MASTERS_MANAGE] },
+      { to: '/settings/gst', label: 'GST Master', icon: Percent, anyOf: [P.GST_MANAGE] },
+    ],
+  },
+  {
+    id: 'administration',
     title: 'Administration',
     items: [
       {
@@ -115,8 +142,6 @@ export const NAV_SECTIONS = [
         anyOf: [P.USERS_MANAGE, P.ROLES_MANAGE],
       },
       { to: '/settings/branches', label: 'Branches', icon: Store, anyOf: [P.BRANCHES_MANAGE] },
-      { to: '/settings/masters', label: 'Masters', icon: ListTree, anyOf: [P.MASTERS_MANAGE] },
-      { to: '/settings/gst', label: 'GST Master', icon: Percent, anyOf: [P.GST_MANAGE] },
       {
         to: '/settings/company',
         label: 'Company Settings',
@@ -142,4 +167,15 @@ export function bottomNavItems(canAny) {
     .filter((item) => item.mobilePriority && canAny(...item.anyOf))
     .sort((a, b) => a.mobilePriority - b.mobilePriority)
     .slice(0, MAX_BOTTOM_NAV_ITEMS);
+}
+
+/** True when `pathname` is the item's page or one beneath it (same rule as NavLink). */
+export function isItemActive(item, pathname) {
+  if (item.to === '/' || item.end) return pathname === item.to;
+  return pathname === item.to || pathname.startsWith(`${item.to}/`);
+}
+
+/** Id of the section holding the page being shown, or null (e.g. the account page). */
+export function activeSectionId(sections, pathname) {
+  return sections.find((s) => s.items.some((item) => isItemActive(item, pathname)))?.id ?? null;
 }

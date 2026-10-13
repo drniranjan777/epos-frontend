@@ -1,5 +1,12 @@
 export const APP_NAME = import.meta.env.VITE_APP_NAME || 'JCB Parts Inventory';
 
+/** Company branding. The logo has dark artwork, so always place it on a light surface. */
+export const BRAND = Object.freeze({
+  name: 'ES Enterprises',
+  logo: '/logo.svg',
+  icon: '/icon.svg',
+});
+
 export const TXN_TYPES = {
   OPENING: { label: 'Opening', direction: 'in' },
   IN: { label: 'Stock IN', direction: 'in' },
