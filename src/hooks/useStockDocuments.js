@@ -27,6 +27,8 @@ export function useCreateMovement() {
     onSuccess: () =>
       Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.movements.all }),
+        // A Stock IN creates a billing invoice.
+        queryClient.invalidateQueries({ queryKey: queryKeys.purchaseInvoices.all }),
         invalidateStock(queryClient),
       ]),
   });

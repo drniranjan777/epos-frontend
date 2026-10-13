@@ -60,6 +60,14 @@ const InvoiceDetailPage = page(
   () => import('../pages/invoices/InvoiceDetailPage'),
   'InvoiceDetailPage',
 );
+const PurchaseInvoiceListPage = page(
+  () => import('../pages/purchases/PurchaseInvoiceListPage'),
+  'PurchaseInvoiceListPage',
+);
+const PurchaseInvoiceDetailPage = page(
+  () => import('../pages/purchases/PurchaseInvoiceDetailPage'),
+  'PurchaseInvoiceDetailPage',
+);
 const ReportsPage = page(() => import('../pages/reports/ReportsPage'), 'ReportsPage');
 const UsersPage = page(() => import('../pages/users/UsersPage'), 'UsersPage');
 const MastersPage = page(() => import('../pages/settings/MastersPage'), 'MastersPage');
@@ -178,6 +186,14 @@ export const router = createBrowserRouter([
                     element: guard([P.CUSTOMERS_MANAGE], <CustomerFormPage />),
                   },
                   { path: 'invoices', element: branchGuard([P.INVOICE_VIEW], <InvoiceListPage />) },
+                  {
+                    path: 'billing-invoices',
+                    element: branchGuard([P.PURCHASE_VIEW], <PurchaseInvoiceListPage />),
+                  },
+                  {
+                    path: 'billing-invoices/:id',
+                    element: branchGuard([P.PURCHASE_VIEW], <PurchaseInvoiceDetailPage />),
+                  },
                   {
                     path: 'invoices/new',
                     element: branchGuard([P.INVOICE_CREATE], <InvoiceFormPage />),

@@ -1,5 +1,5 @@
 import { History } from 'lucide-react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '../../components/common/ConfirmDialog';
@@ -11,11 +11,11 @@ import { CartTable } from '../../components/stock/CartTable';
 import { ProductResults } from '../../components/stock/ProductResults';
 import { PERMISSIONS as P } from '../../constants/permissions';
 import { useAuth } from '../../hooks/useAuth';
-import { useStockCart } from '../../hooks/useStockCart';
+import { priceChange, useStockCart } from '../../hooks/useStockCart';
 import { useCreateMovement } from '../../hooks/useStockDocuments';
 import { getErrorCode, getErrorMessage } from '../../utils/apiError';
 import { cn } from '../../utils/cn';
-import { formatNumber, partsSummary } from '../../utils/format';
+import { formatCurrency, formatNumber, partsSummary } from '../../utils/format';
 
 const MODES = {
   OUT: {
@@ -56,9 +56,13 @@ function StockEntryForm({ mode, branch }) {
   const config = MODES[mode];
   const isOut = mode === 'OUT';
   const navigate = useNavigate();
-  const { canAny } = useAuth();
-  const cart = useStockCart(`jcb-inventory:stock-${mode}:${branch.id}`, isOut);
+  const { can, canAny } = useAuth();
+  // Stock IN lines carry the purchase price for users allowed to change it.
+  const priced = !isOut && can(P.PURCHASE_PRICE);
+  const cart = useStockCart(`jcb-inventory:stock-${mode}:${branch.id}`, isOut, priced);
   const create = useCreateMovement();
+  // Identifies this entry to the server, so a repeated submit is not booked twice.
+  const requestId = useRef(crypto.randomUUID());
   const [details, setDetails] = useState(EMPTY_DETAILS);
   const [invoiceError, setInvoiceError] = useState(null);
   const [customerError, setCustomerError] = useState(null);
@@ -74,11 +78,16 @@ function StockEntryForm({ mode, branch }) {
     setCustomerError(null);
     setServerLineErrors({});
     setDialog(null);
+    requestId.current = crypto.randomUUID();
   }
 
   function requestSubmit() {
     if (!cart.lines.length) return toast.error('Add at least one part');
-    if (!cart.isValid) return toast.error('Fix the highlighted quantities');
+    if (!cart.isValid) {
+      return toast.error(
+        priced ? 'Fix the highlighted quantities and prices' : 'Fix the highlighted quantities',
+      );
+    }
     if (!details.noBill && !details.invoiceNumber.trim()) {
       setInvoiceError('Enter the invoice number, or switch on "No bill"');
       return undefined;
@@ -98,10 +107,18 @@ function StockEntryForm({ mode, branch }) {
         invoiceNumber: details.noBill ? null : details.invoiceNumber.trim(),
         customerId: details.noBill ? null : (details.customer?.id ?? null),
         note: details.note.trim() || null,
-        items: cart.lines.map((l) => ({ productId: l.productId, quantity: Number(l.quantity) })),
+        clientRequestId: requestId.current,
+        items: cart.lines.map((l) => ({
+          productId: l.productId,
+          quantity: Number(l.quantity),
+          ...(priced ? { purchasePrice: Number(l.purchasePrice) } : {}),
+        })),
       });
       resetAll();
       toast.success(`${config.title} saved · ${movement.movementNo}`, {
+        description: movement.purchaseInvoiceNo
+          ? `Billing invoice ${movement.purchaseInvoiceNo} created`
+          : undefined,
         action: { label: 'View', onClick: () => navigate(`/stock/entries/${movement.id}`) },
       });
     } catch (error) {
@@ -195,6 +212,8 @@ function StockEntryForm({ mode, branch }) {
           errors={cart.errors}
           serverErrors={serverLineErrors}
           capped={isOut}
+          priced={priced}
+          onPrice={cart.setPrice}
           onQuantity={(productId, quantity) => {
             cart.setQuantity(productId, quantity);
             setServerLineErrors((e) => ({ ...e, [productId]: undefined }));
@@ -218,6 +237,7 @@ function StockEntryForm({ mode, branch }) {
 
       <CartFooter
         totals={cart.totals}
+        showAmount={priced}
         actionLabel={config.action}
         actionVariant={config.variant}
         loading={create.isPending}
@@ -245,14 +265,35 @@ function StockEntryForm({ mode, branch }) {
         <ul className="mt-3 max-h-48 space-y-1 overflow-y-auto text-sm">
           {cart.lines.map((l) => (
             <li key={l.productId} className="flex justify-between gap-3">
-              <span className="truncate">{l.name}</span>
-              <span className="tabular shrink-0 font-medium">
+              <span className="min-w-0">
+                <span className="block truncate">{l.name}</span>
+                {priced && priceChange(l) !== 0 && (
+                  <span className="text-brand-700 block text-xs font-semibold">
+                    Price {formatCurrency(l.previousPrice)} → {formatCurrency(l.purchasePrice)}
+                  </span>
+                )}
+              </span>
+              <span className="tabular shrink-0 text-right font-medium">
                 {isOut ? '−' : '+'}
                 {formatNumber(l.quantity)} {l.unitCode}
+                {priced && (
+                  <span className="block text-xs font-normal text-slate-500">
+                    @ {formatCurrency(l.purchasePrice)}
+                  </span>
+                )}
               </span>
             </li>
           ))}
         </ul>
+        {priced && (
+          <p className="mt-3 border-t border-slate-200 pt-3 text-sm text-slate-600">
+            <span className="font-semibold text-slate-900">
+              {formatCurrency(cart.totals.amount)}
+            </span>{' '}
+            before tax. Changed prices become the parts’ current purchase price, and a billing
+            invoice is created.
+          </p>
+        )}
       </ConfirmDialog>
       <ConfirmDialog
         open={dialog === 'reset'}

@@ -81,6 +81,7 @@ describe('navigation structure', () => {
         '/stock/entries',
         '/inventory/ledger',
         '/invoices',
+        '/billing-invoices',
         '/customers',
         '/products',
         '/settings/masters',
@@ -101,6 +102,7 @@ describe('navigation structure', () => {
     expect(section('/inventory')).toBe('inventory');
     expect(section('/inventory/ledger')).toBe('inventory');
     expect(section('/invoices/12')).toBe('sales');
+    expect(section('/billing-invoices/3')).toBe('sales');
     expect(section('/settings/company')).toBe('administration');
     expect(section('/account')).toBeNull();
   });

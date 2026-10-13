@@ -23,6 +23,11 @@ export const queryKeys = {
     list: (params) => ['invoices', 'list', params],
     detail: (id) => ['invoices', 'detail', Number(id)],
   },
+  purchaseInvoices: {
+    all: ['purchaseInvoices'],
+    list: (params) => ['purchaseInvoices', 'list', params],
+    detail: (id) => ['purchaseInvoices', 'detail', Number(id)],
+  },
   masters: {
     all: ['masters'],
     list: (name, params) => ['masters', name, params ?? {}],

@@ -1,13 +1,21 @@
-import { Printer } from 'lucide-react';
-import { useParams } from 'react-router';
+import { Printer, ReceiptText } from 'lucide-react';
+import { Link, useParams } from 'react-router';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
 import { Card } from '../../components/common/Card';
 import { PageHeader } from '../../components/common/PageHeader';
 import { ErrorState, ListSkeleton } from '../../components/common/States';
 import { MovementTypeBadge } from '../../components/stock/MovementTypeBadge';
+import { PERMISSIONS as P } from '../../constants/permissions';
+import { useAuth } from '../../hooks/useAuth';
 import { useMovement } from '../../hooks/useStockDocuments';
-import { formatDate, formatDateTime, formatNumber, partsSummary } from '../../utils/format';
+import {
+  formatCurrency,
+  formatDate,
+  formatDateTime,
+  formatNumber,
+  partsSummary,
+} from '../../utils/format';
 
 function Detail({ label, children }) {
   return (
@@ -21,6 +29,7 @@ function Detail({ label, children }) {
 /** One Stock IN / OUT entry with its lines and the resulting balances; printable. */
 export function MovementDetailPage() {
   const { id } = useParams();
+  const { can } = useAuth();
   const movement = useMovement(id);
 
   if (movement.isPending) return <ListSkeleton rows={6} />;
@@ -29,6 +38,8 @@ export function MovementDetailPage() {
   }
   const m = movement.data;
   const sign = m.type === 'IN' ? '+' : '−';
+  // Stock IN entries recorded with purchase prices (not older ones, nor Stock OUT).
+  const priced = m.items.some((item) => item.purchasePrice != null);
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -64,6 +75,21 @@ export function MovementDetailPage() {
           <Detail label="Customer">{m.partyName}</Detail>
           <Detail label="Recorded by">{m.createdByName}</Detail>
           <Detail label="Recorded at">{formatDateTime(m.createdAt)}</Detail>
+          {m.purchaseInvoiceNo && (
+            <Detail label="Billing invoice">
+              {can(P.PURCHASE_VIEW) ? (
+                <Link
+                  to={`/billing-invoices/${m.purchaseInvoiceId}`}
+                  className="text-brand-700 inline-flex items-center gap-1 hover:underline"
+                >
+                  <ReceiptText className="size-4 print:hidden" aria-hidden />
+                  {m.purchaseInvoiceNo}
+                </Link>
+              ) : (
+                m.purchaseInvoiceNo
+              )}
+            </Detail>
+          )}
         </dl>
 
         <table className="mt-6 w-full text-sm">
@@ -71,6 +97,7 @@ export function MovementDetailPage() {
             <tr className="border-b border-slate-200 text-left text-xs text-slate-500">
               <th className="py-2 pr-2">#</th>
               <th className="py-2 pr-2">Part</th>
+              {priced && <th className="py-2 pr-2 text-right">Purchase price</th>}
               <th className="py-2 pr-2 text-right">Qty</th>
               <th className="py-2 text-right">Balance</th>
             </tr>
@@ -87,6 +114,16 @@ export function MovementDetailPage() {
                     {[item.sku, item.partNumber].filter(Boolean).join(' · ')}
                   </span>
                 </td>
+                {priced && (
+                  <td className="tabular py-2 pr-2 text-right">
+                    {formatCurrency(item.purchasePrice)}
+                    {Number(item.previousPurchasePrice) !== Number(item.purchasePrice) && (
+                      <span className="text-brand-700 block text-xs font-semibold">
+                        was {formatCurrency(item.previousPurchasePrice)}
+                      </span>
+                    )}
+                  </td>
+                )}
                 <td className="tabular py-2 pr-2 text-right font-semibold">
                   {sign}
                   {formatNumber(item.quantity)} {item.unitCode}

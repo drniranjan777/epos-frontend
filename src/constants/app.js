@@ -34,6 +34,12 @@ export const INVOICE_STATUS = {
   CANCELLED: { label: 'Cancelled', tone: 'danger' },
 };
 
+export const PAYMENT_STATUS = {
+  UNPAID: { label: 'Unpaid', tone: 'danger' },
+  PARTIAL: { label: 'Part paid', tone: 'warning' },
+  PAID: { label: 'Paid', tone: 'success' },
+};
+
 export const STOCK_STATUS_OPTIONS = [
   { value: '', label: 'All stock' },
   { value: 'available', label: 'In stock' },

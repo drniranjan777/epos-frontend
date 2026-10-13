@@ -12,6 +12,7 @@ import {
   ListTree,
   Package,
   Percent,
+  ReceiptText,
   ShieldCheck,
   Store,
   Users,
@@ -105,6 +106,12 @@ export const NAV_SECTIONS = [
         icon: FileText,
         anyOf: [P.INVOICE_VIEW],
         mobilePriority: 4,
+      },
+      {
+        to: '/billing-invoices',
+        label: 'Billing Invoices',
+        icon: ReceiptText,
+        anyOf: [P.PURCHASE_VIEW],
       },
       {
         to: '/customers',
